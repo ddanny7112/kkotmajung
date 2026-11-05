@@ -9,7 +9,7 @@ create table if not exists public.saves (
   updated_at timestamptz not null default now()
 );
 alter table public.saves enable row level security;
-grant select, insert, update on public.saves to authenticated;
+grant select, insert, update, delete on public.saves to authenticated;
 
 drop policy if exists "saves_select_own" on public.saves;
 create policy "saves_select_own" on public.saves
@@ -22,6 +22,10 @@ create policy "saves_insert_own" on public.saves
 drop policy if exists "saves_update_own" on public.saves;
 create policy "saves_update_own" on public.saves
   for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "saves_delete_own" on public.saves;
+create policy "saves_delete_own" on public.saves
+  for delete to authenticated using (user_id = auth.uid());
 
 -- 2. 하루 감정 횟수 기록 (사용자가 직접 읽거나 고칠 수 없음)
 create table if not exists public.identify_usage (

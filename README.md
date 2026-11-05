@@ -6,6 +6,7 @@
 - `config.js`: 공개되어도 되는 Supabase 주소와 publishable key
 - `supabase/schema.sql`: 데이터베이스 구조
 - `supabase/functions/identify/index.ts`: 사진 감정 서버 함수
+- `privacy.html`: 개인정보처리방침
 - `sw.js`, `manifest.webmanifest`: 홈 화면 앱 설정
 
 지역 경계는 통계청 센서스용 행정구역경계(2018)를 [southkorea-maps](https://github.com/southkorea/southkorea-maps)에서 받아 간략화했습니다.
