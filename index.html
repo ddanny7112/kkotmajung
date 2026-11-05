@@ -1,0 +1,1261 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>꽃마중</title>
+<meta name="description" content="실제 꽃을 찍어 전국 지도와 도감을 채우고, 그 사진의 색으로 꽃을 키우는 게임">
+<meta name="theme-color" content="#12315F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="꽃마중">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500&family=Gowun+Dodum&family=Grandiflora+One&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single thumb-reach column of cyanotype plates over Prussian blue, with a camera dock at the bottom.
+   The interface stays monochrome on purpose: the only colour on screen comes from photos the player took. */
+:root{
+  --ground:#12315F;
+  --ground-deep:#0B2145;
+  --ground-lift:#1B4077;
+  --paper:#F0F4F8;
+  --mist:#AFC4DD;
+  --faint:rgba(240,244,248,.26);
+  --hair:rgba(240,244,248,.14);
+  --scrim:rgba(5,15,34,.66);
+  --display:"Grandiflora One","Gowun Batang","Noto Serif KR",serif;
+  --body:"Gowun Dodum","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"Gowun Dodum",monospace;
+  --latin:"Cormorant Garamond","Times New Roman",serif;
+  --gutter-l:max(16px,env(safe-area-inset-left,0px));
+  --gutter-r:max(16px,env(safe-area-inset-right,0px));
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{-webkit-text-size-adjust:100%}
+img{max-width:100%}
+body{margin:0;background-color:var(--ground);background-image:var(--grain,none);color:var(--paper);font:400 15px/1.6 var(--body);word-break:keep-all;overflow-wrap:anywhere;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ground)}
+button,input,select{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
+h1,h2,h3,p,ul{margin:0;padding:0}
+ul{list-style:none}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* 상단 */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ground);border-bottom:1px solid var(--hair)}
+.top-in{max-width:520px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:10px 9px}
+.mark{font:400 31px/1.1 var(--display);letter-spacing:.01em;-webkit-text-stroke:.5px currentColor}
+.book-title,.ename,.r-name,.kkot{-webkit-text-stroke:.4px currentColor}
+.stats{display:flex;gap:14px;font-size:13px;color:var(--mist)}
+.stat{display:flex;align-items:center;gap:4px}
+.stat svg{width:14px;height:14px;flex:none}
+.stat b{font:500 14px/1 var(--mono);color:var(--paper)}
+.xp{height:2px;background:var(--hair)}
+.xp i{display:block;height:100%;background:var(--paper);transition:width .5s ease}
+
+.shell{max-width:520px;margin:0 auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:18px 128px;display:flex;flex-direction:column;gap:30px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px}
+.sec-head h2{font:400 18px/1.3 var(--body)}
+.sec-head span{font-size:13px;color:var(--mist)}
+.lead{font-size:15px;color:var(--mist);max-width:36em}
+
+/* 화단 */
+.plate{border-block:1px solid var(--faint);padding-block:6px 10px}
+.plots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:4px;row-gap:12px}
+.plot{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0;padding-bottom:2px;border-radius:4px}
+.plot-art{position:relative;width:100%;color:var(--paper)}
+.pl{display:block;width:100%;height:auto;overflow:visible}
+.plot-name{font-size:14px;line-height:1.3;margin-top:2px}
+.plot-meta{font-size:12px;line-height:1.3;color:var(--mist);min-height:1.3em}
+.plot-meta.want{color:var(--paper)}
+.plot.empty .plot-name{color:var(--mist)}
+.reg{position:absolute;left:50%;top:58%;width:18px;height:18px;transform:translate(-50%,-50%);opacity:.5}
+.reg::before,.reg::after{content:"";position:absolute;background:var(--paper)}
+.reg::before{left:50%;top:0;bottom:0;width:1px}
+.reg::after{top:50%;left:0;right:0;height:1px}
+.sway{transform-box:view-box;transform-origin:60px 142px;animation:sway 6.5s ease-in-out infinite alternate}
+@keyframes sway{from{transform:rotate(-1.4deg)}to{transform:rotate(1.4deg)}}
+
+/* 할 일 */
+.tasks{display:flex;flex-direction:column}
+.tasks li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:10px;align-items:center;padding-block:9px;border-bottom:1px solid var(--hair)}
+.tasks li:first-child{border-top:1px solid var(--hair)}
+.chk{width:16px;height:16px;border:1px solid var(--mist);border-radius:50%}
+.done .chk{background:var(--paper);border-color:var(--paper)}
+.done .t{color:var(--mist)}
+.tasks .num{font-size:13px;color:var(--mist)}
+
+/* 이달의 꽃 */
+.strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:6px;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.mini{flex:0 0 104px;scroll-snap-align:start;text-align:left;display:flex;flex-direction:column;gap:2px}
+.mini-art{position:relative;aspect-ratio:1;background:var(--ground-deep);color:var(--paper);overflow:hidden;display:block}
+.mini-art img,.slot-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.mini-art svg,.slot-art svg{position:absolute;inset:6%;width:88%;height:88%}
+.mini b{font-weight:400;font-size:14px;line-height:1.3;margin-top:4px}
+.mini small{font-size:12px;line-height:1.3;color:var(--mist)}
+img.broken{opacity:0}
+
+.note{font-size:13px;color:var(--mist)}
+
+/* 도감 */
+.book-title{font:400 34px/1.15 var(--display)}
+.book-sum{display:flex;gap:18px;margin-top:6px;color:var(--mist);font-size:14px}
+.book-sum b{font:500 15px var(--mono);color:var(--paper)}
+.meter{height:3px;background:var(--hair);margin-top:12px}
+.meter i{display:block;height:100%;background:var(--paper)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px}
+.chip{padding:6px 12px;border:1px solid var(--faint);border-radius:99px;font-size:13px;line-height:1.3;color:var(--mist)}
+.chip[aria-pressed="true"]{background:var(--paper);border-color:var(--paper);color:var(--ground-deep)}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 10px;margin-top:16px}
+.slot{display:flex;flex-direction:column;text-align:left;min-width:0}
+.slot-art{position:relative;display:block;aspect-ratio:1;background:var(--ground-deep);color:var(--paper);overflow:hidden}
+.slot:not(.got) .slot-art svg{opacity:.62}
+.slot.got .slot-art{background:var(--paper);box-shadow:inset 0 0 0 3px var(--paper)}
+.slot.got .slot-art img{inset:3px;width:calc(100% - 6px);height:calc(100% - 6px)}
+.slot.got .slot-art svg{color:var(--ground)}
+.seal{position:absolute;right:7px;bottom:7px;width:26px;height:26px;border-radius:50%;background:var(--ground-deep);color:var(--paper);font-size:11px;line-height:26px;text-align:center}
+.slot-no{font:400 11px/1.4 var(--mono);color:var(--mist);margin-top:5px}
+.slot-name{font-size:14px;line-height:1.3}
+.slot:not(.got) .slot-name{color:var(--mist)}
+.empty-note{grid-column:1/-1;padding-block:24px;color:var(--mist)}
+
+/* 꽃 지도 */
+.mapbox{margin-top:14px}
+.map{display:block;width:100%;height:auto;overflow:visible}
+.land{fill:var(--ground-deep);stroke:var(--paper);stroke-width:.8;stroke-linejoin:round;cursor:pointer;transition:fill .2s}
+.land.seen,.land:hover{fill:var(--ground-lift)}
+.inner{fill:none;stroke:var(--faint);stroke-width:.6;pointer-events:none}
+.inset{fill:var(--ground);fill-opacity:.01;stroke:var(--faint);stroke-width:.8;cursor:pointer}
+.dokdo{fill:var(--paper);pointer-events:none}
+.mlabel{font:400 13px var(--body);fill:var(--paper);text-anchor:middle;paint-order:stroke;stroke:var(--ground-deep);stroke-width:3px;stroke-linejoin:round;pointer-events:none}
+.mlabel.sm{font-size:10px}
+.mlabel tspan{font:500 11px var(--mono);fill:var(--mist)}
+.mb{pointer-events:none}
+.rgs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px;margin-top:14px;border-top:1px solid var(--hair)}
+.rg{display:flex;justify-content:space-between;align-items:baseline;gap:8px;text-align:left;min-height:44px;padding-block:9px;border-bottom:1px solid var(--hair)}
+.rg .num{font-size:13px;color:var(--mist)}
+.nowtag{font-size:12px;line-height:1.3;padding:1px 7px;background:var(--paper);color:var(--ground-deep)}
+.log-fix{display:block!important}
+
+/* 하단 도크 */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--ground-deep);border-top:1px solid var(--faint);padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-bottom:env(safe-area-inset-bottom,0px)}
+.dock-in{max-width:488px;margin:0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) 92px repeat(2,minmax(0,1fr));height:62px;align-items:center}
+.tab{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:12px;line-height:1.2;color:var(--mist);padding-block:6px}
+.tab svg{width:22px;height:22px}
+.tab[aria-current="page"]{color:var(--paper)}
+.shutter{justify-self:center;width:76px;height:76px;margin-top:-22px;border-radius:50%;background:var(--paper);color:var(--ground-deep);box-shadow:0 0 0 6px var(--ground-deep),0 0 0 7px var(--faint);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-size:12px;line-height:1.2;transition:transform .12s}
+.shutter:active{transform:scale(.94)}
+.shutter svg{width:26px;height:26px}
+
+/* 시트 */
+.scrim{position:fixed;inset:0;z-index:11;background:var(--scrim)}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:12;max-width:520px;margin:0 auto;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--ground-deep);border-top:1px solid var(--faint);padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:14px calc(22px + env(safe-area-inset-bottom,0px));animation:rise .22s ease-out}
+@keyframes rise{from{transform:translateY(24px);opacity:.4}}
+.sheet-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;min-height:32px}
+.sheet-bar h3{font:400 18px/1.3 var(--body)}
+.x{width:44px;height:32px;margin-right:-8px;font-size:14px;color:var(--mist);text-align:right;padding-right:8px;flex:none}
+.stack{display:flex;flex-direction:column;gap:12px}
+.plant-hd{display:grid;grid-template-columns:112px minmax(0,1fr);gap:14px;align-items:end;color:var(--paper)}
+.bar{height:6px;background:var(--hair)}
+.bar i{display:block;height:100%;background:var(--paper)}
+.meta{font-size:14px;color:var(--mist)}
+.row{display:flex;gap:8px}
+.row>*{flex:1 1 0;min-width:0}
+.btn{display:block;width:100%;min-height:48px;padding:11px 14px;text-align:center;line-height:1.3;border:1px solid var(--faint)}
+.btn.pri{background:var(--paper);border-color:var(--paper);color:var(--ground-deep)}
+.btn:disabled{opacity:.45;cursor:default}
+.linkish{align-self:flex-start;font-size:14px;color:var(--mist);text-decoration:underline;text-underline-offset:3px;min-height:32px}
+.pick{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;text-align:left;padding-block:8px;border-bottom:1px solid var(--hair)}
+.pick-art{width:44px;height:44px;color:var(--paper)}
+.pick b{display:block;font-weight:400;line-height:1.3}
+.pick small{font-size:13px;color:var(--mist)}
+.seedn{font:500 15px var(--mono)}
+
+/* 도감 상세 */
+.ent-photo{position:relative;flex:none;background:var(--paper);aspect-ratio:1;max-height:56dvh;width:100%;margin-inline:auto;overflow:hidden}
+.ent-photo img{position:absolute;inset:5px;width:calc(100% - 10px);height:calc(100% - 10px);object-fit:cover;display:block}
+.ent-ghost{aspect-ratio:1;max-height:38dvh;margin-inline:auto;color:var(--paper);background:var(--ground)}
+.ent-ghost svg{width:100%;height:100%}
+.thumbs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.thumb{flex:0 0 56px;width:56px;height:56px;background:var(--paper);padding:2px}
+.thumb[aria-pressed="true"]{outline:2px solid var(--paper);outline-offset:2px}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.eno{font:400 13px var(--mono);color:var(--mist)}
+.ename{font:400 32px/1.15 var(--display)}
+.esci{font:italic 500 18px/1.3 var(--latin);color:var(--mist)}
+.stamps{display:flex;gap:6px;flex-wrap:wrap}
+.stamp{padding:2px 9px;font-size:13px;border:1px solid var(--faint)}
+.stamp.on{background:var(--paper);border-color:var(--paper);color:var(--ground-deep)}
+.say{border-top:1px solid var(--hair);padding-top:10px}
+.say h4{margin:0 0 2px;font-weight:400;font-size:13px;color:var(--mist)}
+.say p{max-width:34em}
+.kkot{font:400 21px/1.35 var(--display)}
+.cal{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2px;margin-top:4px}
+.cal span{font:400 11px/22px var(--mono);height:22px;text-align:center;color:var(--mist);background:var(--hair)}
+.cal span.on{background:var(--paper);color:var(--ground-deep)}
+.cal span.now{box-shadow:inset 0 -3px 0 var(--mist)}
+.cal span.on.now{box-shadow:inset 0 -3px 0 var(--ground)}
+.logs li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;padding-block:6px;font-size:14px;border-bottom:1px solid var(--hair)}
+.logs .num{font-size:12px;line-height:22px;color:var(--mist)}
+
+/* 촬영 */
+.cap{position:fixed;inset:0;z-index:20;background:var(--ground-deep);overflow-y:auto;overscroll-behavior:contain;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:calc(14px + env(safe-area-inset-top,0px)) calc(24px + env(safe-area-inset-bottom,0px))}
+.cap-in{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.print{position:relative;aspect-ratio:1;max-height:50dvh;width:100%;margin-inline:auto;background:var(--paper);padding:6px;overflow:hidden}
+.print canvas{position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);object-fit:cover;display:block}
+#devColor{clip-path:circle(0% at 50% 50%)}
+.print.lit #devColor{clip-path:circle(75% at 50% 50%);transition:clip-path 1.5s cubic-bezier(.2,.7,.2,1)}
+.scan{position:absolute;left:6px;right:6px;top:6px;height:2px;background:var(--paper);box-shadow:0 0 14px 2px rgba(240,244,248,.7);animation:scan 2.4s ease-in-out infinite alternate}
+.print.lit .scan,.print.off .scan{display:none}
+@keyframes scan{to{top:calc(100% - 8px)}}
+.r-tag{font-size:14px;color:var(--mist)}
+.r-name{font:400 34px/1.15 var(--display)}
+.r-sci{font:italic 500 18px/1.3 var(--latin);color:var(--mist)}
+.r-grade{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:baseline;border-block:1px solid var(--hair);padding-block:9px;font-size:15px}
+.r-grade .num{letter-spacing:.06em}
+.fld{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--mist)}
+.fld input,.fld select{height:46px;padding-inline:11px;background:var(--ground);border:1px solid var(--faint);border-radius:0;font-size:16px;color:var(--paper)}
+.fld input::placeholder{color:var(--mist);opacity:.75}
+.wait{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.wait b{font:400 18px/1.3 var(--body)}
+
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:30;width:max-content;max-width:calc(100vw - 32px);transform:translateX(-50%);background:var(--paper);color:var(--ground-deep);padding:9px 14px;font-size:14px;line-height:1.4;text-align:center;box-shadow:0 6px 22px rgba(4,12,28,.45)}
+
+@media (prefers-reduced-motion:reduce){
+  .sway,.scan,.sheet{animation:none}
+  .print.lit #devColor,.xp i{transition:none}
+}
+</style>
+
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <h1 class="mark">꽃마중</h1>
+    <div class="stats">
+      <span class="stat" title="이슬"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5C8 1.5 3 7 3 10a5 5 0 0 0 10 0C13 7 8 1.5 8 1.5Z" fill="none" stroke="currentColor"/></svg><span class="vh">이슬</span><b id="stDew">0</b></span>
+      <span class="stat" title="씨앗"><svg viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="8" rx="3.6" ry="6" transform="rotate(35 8 8)" fill="none" stroke="currentColor"/></svg><span class="vh">씨앗</span><b id="stSeed">0</b></span>
+      <span class="stat">정원사 <b id="stLv">1</b></span>
+    </div>
+  </div>
+  <div class="xp"><i id="xpBar" style="width:0"></i></div>
+</header>
+
+<main id="garden" class="shell">
+  <p id="intro" class="lead">이 정원에는 색이 없어요. 밖에서 실제 꽃을 찍어 오면 그 사진의 색으로 피어납니다.</p>
+  <section>
+    <div class="sec-head"><h2>내 화단</h2><span id="plotCount"></span></div>
+    <div class="plate"><div id="plots" class="plots"></div></div>
+  </section>
+</main>
+
+<main id="map" class="shell" hidden>
+  <section>
+    <h2 class="book-title">꽃 지도</h2>
+    <div class="book-sum"><span>열어 본 지역 <b id="mpSeen">0</b> / <span class="num" id="mpAll">9</span></span><span>지역 꽃 <b id="mpGot">0</b> / <span class="num" id="mpTotal">0</span></span></div>
+    <p id="mpLead" class="lead" style="margin-top:8px">꽃을 등록할 때 지역을 고르면 그 사진의 색으로 지도에 꽃이 핍니다.</p>
+    <div id="mapBox" class="mapbox"></div>
+    <div id="rgList" class="rgs"></div>
+    <p id="mpFix" class="note" style="margin-top:10px" hidden></p>
+  </section>
+  <p class="note">지역 경계는 통계청 센서스용 행정구역경계(2018)를 간략화했어요. 울릉도·독도는 확대해서 표시했어요.</p>
+</main>
+
+<main id="today" class="shell" hidden>
+  <section>
+    <div class="sec-head"><h2>오늘의 채집</h2><span>하나 끝낼 때마다 이슬 2방울</span></div>
+    <ul id="tasks" class="tasks"></ul>
+  </section>
+  <section>
+    <div class="sec-head"><h2 id="monthTitle">이달의 꽃</h2><button class="linkish" data-act="goMonth" id="monthMore">전체 보기</button></div>
+    <div id="monthStrip" class="strip" tabindex="0" aria-label="이달에 피는 꽃"></div>
+  </section>
+  <p id="syncNote" class="note"></p>
+</main>
+
+<main id="book" class="shell" hidden>
+  <section>
+    <h2 class="book-title">도감</h2>
+    <div class="book-sum"><span>채집 <b id="bkGot">0</b> / <span class="num" id="bkTotal">0</span></span><span>직접 키운 꽃 <b id="bkBloom">0</b></span><span>도감 밖 <b id="bkExtra">0</b></span></div>
+    <div class="meter"><i id="bkMeter" style="width:0"></i></div>
+    <div id="chips" class="chips"></div>
+    <div id="bookGrid" class="grid"></div>
+  </section>
+</main>
+
+<nav class="dock" aria-label="메뉴">
+  <div class="dock-in">
+    <button class="tab" data-act="tab" data-tab="garden" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V10M12 13c-3 0-5-2-5-5 3 0 5 2 5 5ZM12 15c3 0 5-2 5-5-3 0-5 2-5 5ZM4 21h16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/></svg>정원</button>
+    <button class="tab" data-act="tab" data-tab="map"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.500-6.200-6.500-11a6.500 6.500 0 0 1 13 0c0 4.800-6.500 11-6.500 11Z" fill="none" stroke="currentColor" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.300" fill="none" stroke="currentColor"/></svg>지도</button>
+    <button class="shutter" data-act="shoot" aria-label="꽃 촬영"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3.5L9 5.5h6L16.500 8H20v11H4Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.600" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>촬영</button>
+    <button class="tab" data-act="tab" data-tab="book"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3ZM5 17a3 3 0 0 1 3-3h11" fill="none" stroke="currentColor" stroke-linejoin="round"/></svg>도감</button>
+    <button class="tab" data-act="tab" data-tab="today"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.600 5.600l2.100 2.100M16.300 16.300l2.100 2.100M5.600 18.400l2.100-2.100M16.300 7.700l2.100-2.100" fill="none" stroke="currentColor" stroke-linecap="round"/></svg>오늘</button>
+  </div>
+</nav>
+
+<input id="cam" class="vh" type="file" accept="image/*" capture="environment" aria-label="꽃 사진 촬영" tabindex="-1">
+<datalist id="nameList"></datalist>
+
+<div id="scrim" class="scrim" data-act="closeSheet" hidden></div>
+<section id="sheet" class="sheet" role="dialog" aria-modal="true" aria-label="상세" hidden></section>
+
+<section id="cap" class="cap" role="dialog" aria-modal="true" aria-label="꽃 감정" hidden>
+  <div class="cap-in">
+    <div id="print" class="print"><canvas id="devBlue"></canvas><canvas id="devColor"></canvas><i class="scan"></i></div>
+    <div id="capBody" class="stack" aria-live="polite"></div>
+  </div>
+</section>
+
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script src="vendor/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+'use strict';
+/* ---------- 규칙 ---------- */
+const HOUR=36e5, MIN=6e4;
+const GROW_HOURS={1:4,2:8,3:16,4:32};
+const WET_MS=6*HOUR, DEW_MS=40*MIN, DEW_MAX=6, DEW_CAP=12, WATER_BOOST=.08;
+const STAGES=['씨앗','새싹','줄기','봉오리','만개'];
+const FORMS=['ray','round','cup','trumpet','layered','cluster','spike','orchid'];
+const KEY='kkotmajung.v1';
+const MAP={"w":400,"h":543,"regions":{"sudo":{"d":"M172.9 119.5l-.3 1.6l-.9 .5l-3 4l-1 .6l-.1 1.4l-6 2l-2.4 1.8l-.2 .1l0 .3l-1 1.2l-.6 .1l.5 2.1l-.2 1.3l-1.3 .8l.7 1.9l-.6 .8l1.2 .7l1.3-2l.9 .5l1.8-.5l-.9-.9l1.5-.1l.6 1l1.6 .8l.6-1.4l-1-1.5l-.4-1.5l.4-.7l-.4-.8l-.9 .4l-2.1-.9l-1.3-1.1l.1-.2l-.4-.2l.4-.3l1.5-1.1l.9-.6l4.5-1.5l.7 .9l1 .1l1 .8l4.8 1.7l2.9-.1l0 1.6l-1.1 1l0 2.2l-2.5-.5l-1-.6l-.9 .6l-2.8-1.2l-1.7 .1l-.4-1.2l-1.1-1l-1 .5l.7 1.1l-.6 .8l.2 1.5l.8 1.4l.1 1.1l-.8 3.1l1.4-.3l-.8 2l.6 1.1l1.3-.4l.7 .3l-1.2 1.9l.5 .8l.2 1.7l5.7 5.5l-1.1 1.7l.6 .8l3.1 0l.6 1.5l-1.5 .6l.8 1.2l1.6-.1l1.1 .5l.1 .9l2 3.5l1-.3l.4 1.5l1.5-.3l1.3 1.1l.5 2.3l2.3-1.5l2.7-.9l.9-.6l2.4-.3l.8 .7l1.7-.5l1.6-.8l2.7-1.1l-.5-.6l1.4-1.2l1.2 .5l1.1-.4l1.2 .1l.5 .8l2.9 .9l1.5 2.1l1.8 1.3l2.1 .4l1.3 1.9l1.3-2.2l-.7-1.3l1.1 0l1.4-.6l2.1-1.7l1.7 .3l.9-1.4l1.1-.3l-1.2-1.6l.7-1.4l2.7-.4l2.4-2.2l-.2-1.8l.9-.6l1.4-.4l.8 .6l1-.1l.6-.9l1 .3l2.1 1.4l1-.7l-.3-1.4l1-1.2l.9 .2l1.2-.3l-.4-1l1.5-.4l1-.6l.3-1.8l-.2-.5l.4-2l.7-1l1 1.1l2.3 .4l.5-1.5l.7-.6l0-1l1-1.5l.7 .1l.8-2.7l.7-.4l.3-.4l-.2-2.1l.8-1.7l.3-1.5l-.5-2.4l1.1-1.1l-.7-2.2l0-3.4l1.5-.4l-.1-1.2l.8-1.9l.6-2.1l.7-.4l-.4-1.3l-.2-2l-1.7-2.8l-1.1-.1l0-1l1.1-.4l2.5-2.3l.3-.7l2.5-.1l.5-1.3l-1.3-.9l-1.4-.2l-.8-1.5l-.8-.6l-.7 .7l-1.4-.4l-1-.9l-1.2 .4l-1.2-.3l-1.2 .4l-.6-.9l-2.6-2.1l-.4-.7l-1 0l-1.7-1.7l-2-.9l-1.4 .9l-.3 .9l-1.7 .4l-1.7-1.2l1.2-2l-.3-.7l.2-1.9l.8-3l-.4-.9l-1.3 .9l-1.2-.7l-.9 .9l-.5-1.3l.8-.9l2-1.4l-.1-1.6l-1.5-1.7l.1-.7l1.1-1.4l-.9-1.2l.3-1.6l2.9-1.9l.2-.8l1.3-.9l1.4 .2l.3-1.5l.8-1.6l-.4-1.7l0-1.6l-.7-.4l-.1-1l-1.3-.7l-1.9-.1l-1.1-.3l0-1.2l-.6-2.1l-.7-.2l-2.1 .4l-.5-.5l-2-.3l-1.2-1l-.5-2.1l.1-.9l-.6-.9l.2-2.3l-.5-2.7l-.6-.3l-1.4 .9l-.7-.1l-.4-1l-1.7-.5l-1 1.1l-2.1 .6l-.2 1.1l-1.3-.5l-.7-2l-2 .1l-.8-2.4l.8-1.3l.2-1.6l-.4-1.3l-1.1 .1l-1.1 1.8l-2.3 1.4l-.3 1.1l-1.5-1.6l-1.1-.7l-.7-2.4l-.8-1.2l.4-.7l-1.1-1.2l.2-2l-1.2-.4l-1.4 1l-1.3-.4l-.5-2.1l.2-1.3l-1.2-1l-1.6 .4l-.7 1.4l-1.9 .4l-.4 .9l-1.8 1.2l-.3 1.1l-1.4-.3l-1 .6l.4 1.2l-.7 1.1l-.7 0l.2 1.7l-.2 1l-1.3 1.1l1.4 1.2l-.1 .8l-3.2 1l-.6-.7l-1-.2l-1.3 .9l-.4 1.2l-1.6 .8l-.4 1.1l.2 1.1l.7 .5l-.3 1.2l-1 1.5l.2 1.2l-1.1 .7l-1.5 1.7l.1 .7l-.9 .9l-1.7 0l-.5 1.6l-1.7-.2l-1.7 1.1l-1.7 .8l-1.3-.9l-2.4 2.5l-.4 2.9l.8 1.1l-.4 1.8l1.6 2l-1 1.6l-1.5 1.2l.9 1l-.7 4.7l-2.4 0l-1.9 1.3l-1.1 .6l-1.4-.2l-1.7-1.4l-2.5-1.2l-.4 1.8l.1 .8l.9 1.3l-.7 3.4l.7 .8l.3 2l-.6 1.1l1.1 .5l.1 1l-.8 .3l.6 1.5l.9 1.3l.3 1.7l1.4 1l1.5 0l1.9-.6l-2 1.3l-1.2 .3l1.4 2.7l.8 2.7l.3 4.5l-.9 1.5l.8 .6l-1 1.5l.1 1.1l1.1-.3l.3 1.1l-.1 4.1l.5 .8l3 2.2l-1 .8l-1.7 .1l0-.7l-3 0l0 .7l1 .4l3.6 .1l2-1.1l2.2-2.9l1.8 .2l2.1-2.1l.8-1.4ZM173.1 154.5l-5.6-5.4l.5-.9l1-.2l1.7-1.5l1.2-1.4l.7-1.4l2.1 .2l1.2-1l.4 1.3l1.1 2.3l-.8 0l-.5 1l-1-.6l-.9 .5l-1 1.8l1 .9l-.4 1.2l-.2 2.5l-.5 .7ZM122.2 133.6l-.9 1.2l-.5 2l.5 .8l1.2 .7l.4 1.4l2.1-.6l0-.7l1.7-1l-3.2-1.8l-.7 0l-.6-2ZM151.5 136.3l-.3-.7l1.5-1.1l-.7-2l-1.5-.3l-1.1 .3l-.6 1.1l-.9 .6l-.4 1.2l.1 2l1.6 .2l2.3-1.3ZM153.2 108.5l-.5 .5l-.2 1.7l-1.8 .9l-1.5-.1l-2.6 .3l-3.5 2.4l-1.5 .2l.4 1.2l1.9 1.7l.8-.6l1.5 1.2l.5 1.2l1.8 0l3.2-2.2l1.8-2.1l1.8-.8l2.7-.5l1.4-1.2l-.4-1.1l-1-1.1l-1.4-.3l-2.7-1.6l-.7 .3ZM139.6 87.6l-1-.6l-2.2 1l0 1.7l-.6 1.5l.6 1.4l2 .9l1.1 1.5l-.3 1l1 1.3l2.6-1.7l.6-1.8l-.8-1.1l-2-.4l-1.9-1.6l0-1.5l.9-1.6ZM134.6 80.9l-2-.2l-1.4 1.2l0 1.3l-1.2 2.3l2 1.6l.6-1l2.5-.7l1.6 .4l1.7-.8l1.5-2.3l-.5-.9l-1.1 .4l-1.5-.2l-2.2-1.1ZM148.1 80l-.9-.7l-.8 .9l-1.9 0l-.4 1.4l-2.8 1.6l.3 3.3l-.3 2.3l.3 2.6l2.4 .7l.2 1l1.1 1.3l.7 2.3l-.7 .9l-2 .7l-.2 2.3l2.4 1.8l4 0l2.6-.6l1.7 1.8l1.2-.4l-.9-1.4l.4-1l1.9-.9l-.8-1l-.9-2.3l.7-1.2l-1-.5l.2-2.6l-.7-1.7l.1-.9l1-2.2l-1.2-1.4l.1-.8l-.7-1.4l-1.2-.5l-2.9-2.2l-1-1.2ZM13 79.9l.2-1.9l-1.1 .2l-1.7 1.2l-.3 .9l.5 1.1l1.4 .5l1.2-.8l-.2-1.2ZM10.8 64.9l-1.3 0l-.9 .6l-1.7 .5l-1.3-.8l-.7 .6l-.1 1l1.1 .6l.9 2.8l2.7 .5l.8-.2l.8 .6l1-1.6l.3-1.1l1.8-.9l-.1-2.4l-2-.5l-1.3 .3Z","label":[205,114],"pts":[[243,131],[233,119],[206,130],[227,84],[173,69],[195,42],[236,69],[172,129],[207,90],[188,102],[194,147],[179,143],[169,113],[194,75],[225,154],[193,161],[218,57],[159,138],[218,143],[212,167],[158,92],[179,87],[216,75],[241,103],[193,127],[238,150],[202,58],[186,61]]},"gyeongnam":{"d":"M335.6 345.1l-.6-.7l.8 .9l.3 0l.2 .5l2.4 0l1.2 .4l.5-2.8l.8-.4l-.4 3.2l1.3 0l.4-1l1-.3l1.1 .6l.4-2l.6 0l-.5 2.4l.6 2.8l.8 1l.7-1.3l.9-.2l.3 1.3l.7-.3l-.4-1.5l-.2-2l.8 .3l.6 1.7l.8-.6l.4-2.5l.9-.1l1.4-2.1l.7-.5l.7 .6l.1 1.3l1.2 0l.7 1.2l1-1.1l.9 .3l.4-1.8l-.8-1.4l-.2-1.6l1.4-.5l1.5 .2l1.4-.7l.6 .4l1.4-.8l.3-1.5l1.1-.7l.7 .1l.6-1.8l-.7-.8l1.4-.9l1-2.3l.1-2.6l.6-1.9l-.3-1.3l.9-1.6l.9-.5l.7 .8l.8 0l.4-1.1l.7-.1l.7-1.5l.9-.8l1 .2l1.2-.8l-.5-1.1l-.8-.3l.1-1.4l.7-.4l.6-1.3l.1-1.7l.6-1l-1-1.3l.3-1.2l1.6-1.5l.4-1.1l-.2-2.8l-.9-.1l.2-1.1l.8 .1l.8 1.5l-.1 1.1l1 .7l-.4 1.6l2.8-1l.5-3.4l.9-3.8l-.3-1.8l.9-.6l-.1-1.8l-1.5-1.9l-.2-1.9l.6-.7l-1.7-.4l-1.3-.8l-2.3-.7l-.8 .2l-.7-.9l-.8-.1l-2 2l-1.3-.2l-.6 1l-.9 .5l-.7-.6l-1.8-.3l-.4-1.2l.4-.5l.2-1.8l-.4-1l-1.8-.3l-2.3-1.7l-.6 .5l-2.9 .2l-1.5-.9l-.6 1.1l-2.5 .6l-1.5 .8l-1 1.5l0 3.6l-1.8-.5l-.9 1.8l-.7-.4l-1.9 1.5l-1.5 1.1l-1.7-.6l0-.5l-1.6-1.4l-2-.6l-2.2 1.2l-1-.3l-.1 1l-1.7 2.6l-.7 .6l-.7-.9l-2.6 1l-.7 1.7l-.7 .3l-2-.1l-2.6-1.3l-1.7 .3l-1.2-1.6l-1.8 .1l-.6-.4l-2 1l-2.2 .7l-2.3-1.2l-.9-1l-.3-1.1l-1.7-.9l-.2-1.9l.2-1.6l-.8-1.3l.2-1l-1.6 .8l-.2 3.5l-2 .4l-1.6-.5l-1.1 .2l-1.1 1.4l-.7-.2l-.8 .9l-.8-.1l-1.5 .8l-1-.2l-.5-.4l-.5-2.1l-.7-.9l-.9 .1l-2.5-1l-.8 .5l-1.3-.2l-1.3 .9l-1.6-1.2l-1 1.6l-2.2-.5l-1.3-1.3l-1.8 .4l-.2-1.4l.6-.6l.9 .1l.4-.7l1.2-.4l.4-1.1l-.3-1.3l.1-1.4l-1-2.7l-1.9-1.2l-.1-1.3l-.7-.9l-1.3 .2l-.7-.5l-.6-1.3l.3-1.6l-1.7-.9l-1.3-.4l-1.3-.8l-1.5 1.1l-1.7-.6l-1.4 .7l-1.2-.9l-1.1-2l-.7 .6l-1.8-.9l-.6 .7l-.8-.8l-.3-1.7l-.8-1l-2 .4l-.6-.6l0-1.6l-1.2 .5l-.8-.2l-.5 2.4l-.9 1.5l-1.2-.2l-.6 .8l-1.2 .1l-1.9 1.1l-.5 .8l-1.2 .2l-1.1-.7l-.3 1.4l-1.6 3.2l-1.5 .8l-1.2 1.1l-.5 .9l-.7-.3l-.6 1l.1 3.5l-.2 1.4l-.9 .6l-.6 1.1l-.2 2.2l-1.5 2.6l1.2 2.4l-1.7 .9l-.5 1.4l.3 1l-1.2 1l-.7 1.7l.5 .7l2 1.2l2.7 4.9l-1.3 .8l-.1 1.5l.8 1.3l.6-.2l1.6 .6l-.7 .9l-.3 2.1l-1.1 1.1l-.8 .4l-.7 1l-.2 1.1l-1.2 1.1l.2 1l.8 1.3l-.2 .9l-1.2 1.4l-1.5 .9l-.7 0l0 1.3l.6 .4l.9 2.3l1.1 .6l.3 2l.6 1.6l-.3 2.2l.5 1.9l1.9 2.1l.9 .1l1.3 1.2l1.4 1.9l.1 2.1l1.6 2.2l1.3 .7l.6 1.2l2.2 1.3l.3 1.6l1 1.2l.2 1l-.5 2l-1.4 1.4l-.3 .9l.9-.1l.9 2.3l.6 .1l.4 1.2l2.1-1.5l1.4-.5l.9 .3l2.4-.1l1-.9l1.2-2.5l1-2.9l1.5 1.2l-.8 1l.3 .9l1.1 .5l1-1.7l1.7 1.8l1.1-1.9l.8 1.2l.9-2.2l-.7-.7l-.4-2l1.3 .3l.7-1.9l1.6 3.3l-.9 1.4l.3 1.8l.6 1.2l-1.6 1.5l.7 1.3l1 1l1 .5l1.1-.2l2.1 .6l-.4 .7l.8 1.2l.9-.1l1 1.4l1.6-1.9l.5 .9l1.1 .4l2 .1l-.4-1.7l.6-1.3l-.6-1.2l2.1-.8l2.8 .6l.1 1.2l1.6 1.8l1.3-.5l.3-1.6l.6-1.1l1.7-1l1.3 1.9l-.2 .7l.8 .7l0 1l-2.6 .1l-1.1-.2l-.7 .6l1.8 1.8l3.3 1.4l.9-1.2l1.1 1.8l-.8 1.1l.7 1.6l1.4 .3l1-.7l1.3 .1l1.4-.8l.3-1.8l1.1-1.8l-1.3-1.7l-1.2 .8l-.3 1.2l-.8 .8l-.5-2l0-1.6l.9-1.1l-.1-1.4l.2-2.1l1-1.1l-.2-1.3l-.6-.3l-2.2-.1l.7-1l1.8 .2l2.1 .6l1.1-.5l.2-1l1.5-.9l0-.8l-1.4-.7l-1.6-2l1.1-.4l.3-1l-.9-.5l-.6 .5l-1.3-.2l.2 1.1l-.7 .8l-2.2 .3l-1.5 .8l-.2 1l-1 .9l-.5-.1l.6-2.2l-.2-1l1.8-.4l1.1-.8l1.3 .6l1-1.7l1.7 .1l.7-.9l-.7-.8l-1.1-.8l.9-.8l.7 .7l1-.1l1.2-.7l.8 .8l1.1-.6l1.6-.5l.4 1.1l2.4 .8l-1.1 1.4l1.6 1l-.7 1.1l2.6-.4l.6-1.1l-.7-1.1l1.7-.4l-2.1-1.8l-.3-3.7l-.5-1.6l-.8-1.4l-.8-.2l-.4-1.1l1.8-2.3l.3 3.2l.5 1.2l.8 .6l.6 1.8l1.1-.9l1 .4l.1 .9l1.2-.1l.6 1.8l.8-.7l-.5-1.7l1.3 0l1 1.7l0 .9l-.9 1.3l1 .4l1.1-.5l2 1.9l1.8 .6l.8-.4l.9 .4l2 0l1.7 0l0 .6l-2.2 .5l-.7 .7l.3 1.1l1 .8l.1 2l1.1 .8l-.4 1.6l1.2-.3l-.2-1.3l1.2-3l-.3-1.4l-1.1-.2l.2-.9l0-1.8l-.5-.4ZM298.4 369.5l-1.9 1.3l2 .1l1.8 .9l-.1 1.9l.9 .5l.6 2.3l.8 .4l1.5-.3l.8-1.4l-.1-.9l.5-1.3l-.5-2.5l-2.1-.5l-1.3 .7l-2.8-.7l-.1-.5ZM273.2 361.6l-1.1-.1l-1.3 .6l-1 1.3l0 .8l-1 1.4l-1.2 .9l.2 1.6l.5 1.1l1.3 .5l2.5-.2l.4-.8l1.9 1.1l1.4 .5l1.5-.5l-.7-.8l-1.3-.3l.5-2.1l-.6-1.5l-.9-1.3l-2 1.5l-.1 1.8l-.8-.4l.4-2.4l1-1.4l.4-1.3ZM263 367.4l-.4-1.1l.2-1.2l1.5-.8l.6-1.4l-.5-2.7l.1-.7l-1.5 .1l-.7-.6l-2.3 1l-1.1 2l1 1.2l-2.2 .5l-.7 2.4l-1.2 1.2l.1 2.7l1.9 3.5l.6 1l.6 1.7l-.8 .2l-.3 1.8l1.2 .1l1 2l1.9 .5l1.2-.6l.5-.8l-.1-1.3l-.6-1.3l1.9-1.2l1.3-.2l.4 1.1l-.4 1.9l.5 2.2l.7 1.5l1.5-.3l1.1-.8l1.1 .9l.4-1.2l.7 0l.7 1.4l1.2 .6l1.2-.7l-2-1.1l.1-1l1.6-1.4l-.1-2.3l-.5-1.1l.6-.7l.7-2.4l-1.2-1.3l-.7 .3l-.8-1.1l-.9 .4l-2.3-.2l-.9 1.2l-1 .4l-.9 1.1l-.8-.5l-.2-1.5l-.5-.7l-1.4-.3l-.3-1.3l-.8-1.1ZM323.4 374.5l-.5-.6l.5-2l1.8 .6l1-.5l1.1 2l1.3 0l-.9-1.9l-.5-.2l.3-1.7l-1.8-1l1.1-.7l.6 .7l.9-.4l-.5-1.2l1.1-1l-.7-2.1l-.8 .3l-1.1 1.7l-1.1-1l1.4-2.5l.7-.7l-.6-2.2l.9-1l-2.5-3.2l.5-1.2l-.5-.6l.6-.8l1.1-.6l.2-1.2l-.5-.7l-3 .1l-.5 2.3l.2 .8l-1.2 .8l-.6 2.9l-1.8-.3l-3.1 1.6l.5 1.1l1.5 1.2l.6 1.6l-1.7 .4l-.7-1.2l-1.2 .6l-.3 1l-1.5-.8l-1-1.2l-1-.2l-.7 1.1l-1.8 .9l-1.2 1.6l-.3 1.2l.7 3l1.5 .7l0 1l1.2 1.4l.9-1.2l.1-1.2l2.5 .1l.1-1l.8-1.1l1.3 .7l-.3 1.3l.7 .7l-.8 .8l0 2l-1.8 1.9l1.3 0l1.9 1.1l-1.4 .2l-.6 1.5l.7 1.1l1.7 .3l-.3 .8l-1.4 .3l-.5 .8l.4 .8l1-.2l1.1 .7l1.3-1.2l0-1.3l2-1.5l-1.2-1.8l.4-1.4l1.2 .1l1.2-1.2Z","label":[306,322],"pts":[[270,279],[346,327],[363,329],[293,350],[285,335],[269,328],[355,343],[305,335],[256,350],[272,301],[370,313],[300,298],[324,300],[243,295],[371,298],[344,311],[356,299],[270,354],[265,313],[254,332],[303,363],[245,317],[287,306],[332,328],[260,268],[248,278],[343,296],[317,342]]},"gyeongbuk":{"d":"M312.1 287.6l-.2 1l.8 1.3l-.2 1.6l.2 1.9l1.7 .9l.3 1.1l.9 1l2.3 1.2l2.2-.7l2-1l.6 .4l1.8-.1l1.2 1.6l1.7-.3l2.6 1.3l2 .1l.7-.3l.7-1.7l2.6-1l.7 .9l.7-.6l1.7-2.6l.1-1l1 .3l2.2-1.2l2 .6l1.6 1.4l0 .5l1.7 .6l1.5-1.1l1.9-1.5l.7 .4l.9-1.8l1.8 .5l0-3.6l1-1.5l1.5-.8l2.5-.6l.6-1.1l1.5 .9l2.9-.2l.6-.5l2.3 1.7l1.8 .3l.4 1l-.2 1.8l-.4 .5l.4 1.2l1.8 .3l.7 .6l.9-.5l.6-1l1.3 .2l2-2l.8 .1l.7 .9l.8-.2l2.3 .7l1.3 .8l1.7 .4l.3-1.3l.9-.2l.9-2.5l-.2-1.3l1-2.3l-.2-1.4l1-2.6l-.4-1.6l1.6-2.9l-.2-.5l.8-2.7l.6-1.3l-.7-.9l.8-1l-.3-1.2l.3-.8l-.8-1.6l.3-1.2l.7-.3l1.8-3.1l-.2-1.7l1.2-1.1l1.4-1.9l-.6-.7l.1-2.4l-.3-1.3l-1.5-2.3l-1.9 2.8l-.7 .2l-.6 1.2l-.8 .5l-.1 1.1l-3.5 2.2l-.2 1l-.8 .1l-1.4-.6l-2.6-1.9l1-1.1l-.5-1l-1.2 1l-.8-2l.5-1.3l1 0l1.3-.9l.6-.4l0-1.2l.6-.7l1-.1l0-1.3l-1.3-.4l-1.9-1.9l-.3-.6l.4-2.3l-.7-2l-1.1-.5l-.4-1.7l.8-.3l.3-1.1l-.3-1.9l-.7-1.3l.3-1.5l-.2-1.5l.6-3.5l-.2-.9l1.2-3.5l2.7-4l.5-1.7l-.2-1.3l.3-2.5l-.2-1.8l.8-.5l.2-1.5l-.4-1.8l-.1-2.8l-1.9-2.5l-.5-1.8l.5-.7l-.4-1.4l.5-2.1l.8-.9l1-2.4l1.4-.8l1.3-1.6l-.3-2.1l.4-.8l-.7-2.8l.8-1l-1.2-2.1l-.4-2.4l-.9-1.8l-1.4-1.8l-.6-1.7l-.4-2l.3-.3l-.3-1.5l.4-2.8l-.1-1.4l-.9-2.8l.7-1.1l-.1-1.9l-.4-1.9l.4-.5l0-1.7l.9-1.1l-2-1.4l-1.7-1.9l-.4-1.2l.3-.8l-.3-1.4l-.9-1.2l-1.5 0l-3.1 1.7l-.8 1.4l-1.8-.2l-.4 1.4l-1.3 .5l-.7 1.1l-1.2 1.1l.6 1l-.4 .6l.4 1.3l-2.2-.1l-.8 .4l-2.6-2.7l-1.5-1.1l-1.2-.4l-.3-.7l-1.2-.2l-1-.7l-2 1.2l-.2 1.3l-.6 .9l-2.8-1.2l-1.2-.1l-1.9-.5l-2 .6l-1-1.5l-1.8 .1l-1 2.6l-1 1l0 .9l-1.5-.7l-.2 .8l-2.3-.6l-1.4-2.6l-1.6 .2l-.7-1.1l-2 0l-.7 2.3l-1 1l.8 1.7l-1.2 .6l-1-1l-1.2-.4l-1.5 .3l-.9-1.2l-2.9-1.2l-1.1 1.4l-.4 .9l-1.8-1l-.2 .8l-2 .1l-1.3 1.2l.6 .9l-2.2 2.8l-2.2 .5l-.8 1.7l-2.3 1.2l-1.1 1l-.2 1.1l-1.5 .8l.3 1.3l-.4 1.1l-1 1.3l-.3 1.2l1 .3l1 1.1l0 1.4l-1.2 1.3l-.1 1l-.9 1.2l-2.9-.2l-1.2 1.1l-1.2-1l-1.6-.4l-.9 .1l-.4-.7l-1.6-1.2l-1.1-2l-1.3-.8l-2-.7l-.4 .9l.3 1.2l-.7 .5l-1.3-.4l.2 3.5l-2.4-.4l-1.1-.5l-1.5-.1l-.8-1l-.9 .8l-1.6 .4l-.1 1l-1.2 .8l-1.7-1.2l-1-.1l-.3 2.3l-1.8 3.6l0 .7l1.5 1.1l1.3 1.4l.2 1.4l-1.6 0l-2.7-2.2l-1.1 1.3l-1.7-.3l-.7-1.1l-1.1-.4l-.6 1.5l0 1.2l-1.2 .1l-.4 1.5l-2.7-.3l-1 .8l2.5 .8l.3 1l1-.1l.1 1.3l.6 .2l-.4 1.6l-.1 1.7l-1.7 .4l-.3-1.1l-1.3-.2l-.1-1.2l-1.3-.9l-.9 1.4l-1 .1l0 .9l.6 .7l-1.2 .9l-1.5-.3l-1.9 1.1l.1 1.4l2 1.5l2.2-.1l.6 .3l1 1.5l-.2 1l2.4 1.7l.3 2l-2.3 2.1l.6 .7l-.1 1.3l-.7 2.1l.2 1.1l-.1 2.2l-.8 .3l1.6 2.3l.2 1.6l-.3 1.7l-2.4 1.6l-.8 1.9l.4 .9l.4 2.6l.7-.4l1.7 .4l.7-1.8l.9-.9l.3 1.4l1.9 .9l1.3 1.1l0 .8l1.8 .7l.8-1.3l.7 .1l1.6-.9l1.2 .4l1.7 1.1l-1.4 1.6l1.6 2.4l.5 1.3l-1.4 .8l-1.1-1.2l-1.1-.3l-2.1 .9l-.6 1.2l.6 1l0 .7l1 1.6l-.7 .6l.1 1.4l-1.8 2l.3 .8l-.9 1.4l.2 1.9l-.8 1l-1.6 1l-1-.5l-1.1 1.5l-1.6 .7l-.5 .9l-.1 2.5l1.4 1l.9 3.2l.1 1.3l-1.8 1l.2 2l0 1.6l.6 .6l2-.4l.8 1l.3 1.7l.8 .8l.6-.7l1.8 .9l.7-.6l1.1 2l1.2 .9l1.4-.7l1.7 .6l1.5-1.1l1.3 .8l1.3 .4l1.7 .9l-.3 1.6l.6 1.3l.7 .5l1.3-.2l.7 .9l.1 1.3l1.9 1.2l1 2.7l-.1 1.4l.3 1.3l-.4 1.1l-1.2 .4l-.4 .7l-.9-.1l-.6 .6l.2 1.4l1.8-.4l1.3 1.3l2.2 .5l1-1.6l1.6 1.2l1.3-.9l1.3 .2l.8-.5l2.5 1l.9-.1l.7 .9l.5 2.1l.5 .4l1 .2l1.5-.8l.8 .1l.8-.9l.7 .2l1.1-1.4l1.1-.2l1.6 .5l2-.4l.2-3.5l1.6-.8Z","label":[329,220],"pts":[[330,277],[298,258],[363,218],[344,261],[316,274],[359,186],[347,206],[348,238],[320,261],[265,210],[327,295],[331,200],[373,180],[325,184],[386,259],[300,292],[292,179],[316,241],[379,160],[337,165],[283,223],[367,280],[307,180],[303,210],[372,236],[280,245],[362,254],[292,196]]},"jeonnam":{"d":"M149 312.4l-.8-.2l-1.7 .6l-1.2 1.8l.4 2.2l.8 .8l-.4 1l-1.2-.5l-1.5 4l0 2.1l-1.3 2.1l-1.9-.1l-.7 .6l-.5 1.6l.3 1.9l-1.4-.8l-.7 2.8l.5 1l2.4 1.5l3.3-1.1l-1.7 2.5l1.3 2.2l1.8 2.4l.6-.1l1.4 2.8l1.9 .1l1.5 .6l-.6 .9l-1.5 .3l1.4 1.1l-.9 1.6l-1.7 1.1l-.4 .8l.7 .9l-1.8 .3l-.2-1.4l-.8-.1l1.4-1.9l-1-1.3l-.9 1l-1 .3l-.4-.9l-1-.6l-.8 .1l0-1.4l-1-.3l-.1-1.3l.7-1.4l.5-1.8l-.9-.8l-1 2.1l-1 0l0-.9l-1.2-.2l-.9 .4l-.6-1.1l-.8 0l-.8 1.1l-.8 2.3l1.3 .6l-.7 .8l-1.5-.3l-1.2-.7l-.5 .4l-1.5-1l-2.5 1.4l-.2 .8l.7 .7l-.5 1.1l1.8 1.4l1.3-.5l.6 .7l1.3-.3l.8 .5l-.4 1.5l.4 2l.9-1l.3 1.3l.6 .1l.9-1.1l.5-1.4l-.8-.4l-.2-1l1 0l.9-.9l1.5 1.6l.8-.8l-.7-1.2l.8-.4l.1-1.7l1.3 .1l.9 1.6l.5 3l1.3-.7l1.1-.1l.5 1l.1 1.3l-3.3 2.1l.9 1.5l-1.3 1.5l-1.2 .5l-.7-1.4l-1.1-.4l-.7 1.9l1 1.5l1 .6l.7 2.7l1 .1l.8-.7l1.2 .2l-.2-2.2l.6-1.4l-1.1-1l.9-.7l-.4-.7l.2-1.3l1 .8l-.1 1.5l1.1 1l-.5 1.3l.3 2.5l1 .8l0 .9l-1 1.3l.8 1l-.4 1.3l.7 1l-.3 1.5l-1 .5l-2 2.9l-.2 1.3l1 1.3l2.2-.3l3.1-1.6l.7 1.6l-1.9 .4l-1.6 .7l-1.9 .3l0 1.5l-1.2 .3l-.4 .8l2.2 1l-.3 1.1l-.9 .9l-.3 1.2l-1.1 .5l-.7-.7l.1-1l-1.3-1l.1-1.9l-2.6-2.1l-.8 .2l-1.1 3.2l-.3 2.3l-1 .3l.1 2.4l-.3 .8l.7 1.8l-.3 .8l1.9 1.8l-.3 .9l.5 .7l-.6 1l2.5 .7l-.4 1.4l.5 .6l1.6-.6l2.1 .9l1.5 .1l.7 1l-.3 1l.4 1l3.1-2.2l.4 1.1l1.7 1.3l1.2 2.3l-1.2 .4l.3 1.2l-.3 1.2l1.2 .9l-.3 1.1l-.9 .9l1.5 1.8l.7-.5l1.9 .6l.7 1.3l-1 .9l-1.2 .1l-.4 1.6l-.8 .8l.7 1.4l-.3 1.2l1.5-.4l.7-.9l1.1 .9l.1 1.5l.4 .7l-1.2 1.5l.4 2.2l2.1-.7l1.1-1.8l2.3 .2l.9 .7l.8-2.8l-.6-.7l1.5-1l0-1.9l-.7-.7l.8-.7l1.1-1.8l.9-.2l.8-.7l.5-.6l.8 .8l1.9-2.1l2.1-.3l1.9-2.9l-.7-1.4l1.4-.3l.2-1.1l-.2-2.3l.6-.4l0-3.2l.3-2.2l.7-1l.9 1.4l0 2.1l.3 1.3l-.6 3.3l.9 3.2l-.9 1.1l1.7 .2l-.2 1l1.9 .8l1.2-.3l.9 .8l2.4 .9l-.7-1.6l1-.6l2.8 .3l1.6-.4l-.4-.6l0-1.8l1 1.1l1.8-1.7l-1.1-.7l1-1.8l.7-2.5l.3-2.2l-.8-1l1.1-1l0-1.1l.8-1.1l-.6-1.5l2.5-.7l.9-.8l.6 .1l1.1-1.5l.5-1.2l1.3-.2l2-1.3l.4-1.4l.8-.8l.9 0l.7 .8l2.6 .1l2.2-2.6l.2-1.8l1.6-1.9l1-.3l1.4 2.6l1-.8l1.8 .9l.7-1.7l1.8-.2l.1 2.3l.5 1.9l-1.3 2.7l-.3 1.6l-1.8-.3l-1.1-1l.6-1.3l-.5-2.3l-1.2-.1l-.8 .5l-1.1 1.2l.4 1.1l-.9 .7l-.4 2.4l-2.2 .6l-.8 .5l-1.3 1.6l0 1.6l-.5 1.9l-1.2-.3l-1.3 2.1l-.4-.1l-1.2 1.4l-.1 1.1l.7 .8l0 .9l1.7 .6l2.4-.2l.3-.5l1.3-.1l1.2 .4l3.6 .7l2.2 2.3l-.8 .5l-.4 1l2.6 1.1l.2 1.6l1.4 1.2l1.4-.6l-.2-.9l-1.3-.7l1-1.5l1.5-.2l.5-1l.9 1.1l.6-.7l1.1 0l-.9-1.3l1.9-.5l.1-1.1l1.7-.2l-.3-.9l.4-1.2l.7-.7l-3.2-1l.5-1.3l-.7-.9l.5-.8l1.1 .1l.4 .6l1.1 0l.9 .5l.9-.6l1.2 .9l1.1-.3l1.5-1.7l.1-.8l-.7-1.1l-.1-1.7l-1.7-.3l-.5-.6l1-.9l-.8-1.3l-1.4-.1l-2.5-2.6l-1.5-.9l-.9-.9l-.1-.9l-.8-.7l-.5-1.4l.6-.9l1.5-.9l.1-1l-1.2-.4l.8-2.1l1.3-.6l.5-.8l-1.4-.6l-.4-.8l1.7-.4l1.2-.7l3.1-.8l1.5 0l.2-2.1l-.3-.7l1.8 0l.7 1.4l.3 1.4l1.3 .4l-1.2 1.6l-.3 1.3l2.9 .7l1.5 4.1l.8 .4l-.9 2.4l-1.8 1.3l.3 1.9l-.7 1.7l.3 2.3l1.9 .7l.9-.1l2 .8l.8 .9l.6-.2l-.1-1.2l.2-1.4l-1-2.6l.3-.9l-.9-.7l1-.5l.7 .1l.5-1.6l1-1.8l.3-1l1.9 2.3l2.1 .8l1.8-.6l.4-.8l1 .2l-.1-1.1l.4-1.5l-.7-1.1l.9-1.2l.2-1.3l.8-2l-.1-1l.5-.6l.1-1.7l-1.1-.8l-4.9 .4l-2.3 2.1l-.6-.7l-2 1.6l-.8-.6l-.1-.9l-.9-1l-.6 .2l-1.2-2.4l1.8-1.5l-1.8-2.6l.6-.7l1.5 1l.5 1.3l1.2 1.8l2.5-1.9l-.6-.7l.6-1.9l.8 .1l1.1 1l.6-1.3l.6-.3l1.6-1.9l.7 .6l.6 1.5l1.6 0l0-2l-.7-1.2l.3-.9l1.4-1.4l.5-2l-.2-1l-1-1.2l-.3-1.6l-2.2-1.3l-.6-1.2l-1.3-.7l-1.6-2.2l-.1-2.1l-1.4-1.9l-1.3-1.2l-.9-.1l-1.9-2.1l-.5-1.9l.3-2.2l-.6-1.6l-.3-2l-1.1-.6l-.9-2.3l-.6-.4l0-1.3l-.7-.9l-1-.4l-1.8-1.3l-.4-.7l-2.3-1.6l-.9 .1l-1.2-.7l-1.3 .5l-1.3-.2l-1.3 1.1l-.4 1.4l-1.8 2.9l-1.3-.4l-1.8-1.1l-1.8 .7l-.6 .8l-1 .2l-1.9-.9l-2.3 .2l-1.7-1.7l-1.1-.5l-.7 1.7l-1 .1l-.9-.6l-.3-1l-1.3 .1l-1.6 2l-1.3 .3l-1.1 .8l-.9 0l-3.5-1.7l-1.4-.5l.7-.7l1.5-1l-.4-1.5l.4-1l-1.2-1.7l-.6 .6l-1.4-1.3l.9-.8l.9-2.7l-1.2-.7l-.2-3.2l-1.6 .9l-.9-.7l-.7 2.4l-.7 .3l-.3 1l-.8-.1l.4 2.6l-1 .6l-2.2 0l-.4-1.1l-2.2-1.7l-.4-2.4l-1.1-.4l-1-.9l-1.6-.4l-.5-1.2l-1.3-.8l-1 .2l0 1.5l-3.9 .2l-1.3 1.6l.3 2.7l-.6 1.3l-1.1 1.4l.1 1.7l-1 1.2l-1.1 0l-.4 1.4l-1.4 .3l-1.2-.4l-.6 1.4l-1.2 1.6l-1.3-.1l-1.5-1l-1.9 .3l.5 1.1l-.4 1.6l-1-.9l-1.9-.3l-1.2 .6l-1.5-2l.5-1.9l-.6-1.4l-.7 .3l-.5-1.5l-1.5-1.2l1-.9l.2-1.2l-1-1.3l-2.4-.6ZM151.2 379.2l-.6 2.1l-.6 .7l-3.1-.9l-2.7-.7l.3-.7l2.5 .5l-.4-.9l.5-.6l2.4 1.5l.6-.8l1.1-.2ZM156.9 433.6l-.8-.5l-1.9 1.2l-.6 1.4l0 1.3l.3 2l1.3 0l1.3-.5l1.7-1.7l2.2-1.6l0-.7l-2-.2l-1.1 .2l-.4-.9ZM165 431.6l-1 1.3l0 .7l.9 .8l-1 .9l-.5 1.7l2 2.7l.8-.6l.2-2.4l-.2-1.5l-.9-.3l0-.9l1.7-.2l.4-.6l-1.3-1.2l-1.1-.4ZM183.6 429.7l-1.2 .5l-1 1.1l-.8 1.5l.5 1.5l1.8 1.6l2.6 0l.8-2.1l-1.5-2.7l-1.2-1.4ZM158.3 428.1l-.4 2l-.7 2l.6 .4l-.1 1l2.1 .6l.7-1.1l1.3 .2l-.1-1l.9-1.4l-1.3-1.8l-1.2 .2l-1.8-1.1ZM179.6 420.5l.3 1.3l2.1-2.1l1.2 .1l-.2-1.2l1.1 0l-.1-1.2l-1.3 .8l-.3-1.1l-1.5-.4l-.7 .7l-1.1-1.3l-1.2 1l-.2 1.1l-1.1 .3l-1.1-1.3l-.7 1.3l.9 1.1l2-.5l1.4 .3l.5 1.1ZM194.5 417.9l1.6-.2l0 1.3l-1.1 .3l.2 1.3l1.6-2l.6-1.4l1.3 .2l-.6-1.3l-2.5 .6l.1-1.6l-1.9-.8l-1 1.8l1.6 1l.1 .8ZM168.2 412.2l-.6-.4l-1.6 .6l-1.4 .2l-.8 1.2l.6 1.4l-.4 .6l.3 2l.3 .6l2.2 1.8l.9 1.8l2.3 0l1.1 .9l.9-1.1l.4 .7l1.4 .1l-.3-1.1l.7-.9l-1.2-.3l-1.6-2.7l-.5-1.9l0-1.7l-1.5-1.4l-1.2-.4ZM187.7 412.7l-2.1 .2l-.8-.8l-1.1 .3l-.8-1l-1.3 2.1l-.1 1.1l1.5 .7l1.8 1.2l1.4-.6l.4-1l1.5 .2l0-.9l-.9-.7l.5-.8ZM179.1 408.4l-.5-.3l-2.1 .9l-.7-.2l-1.3 1l-.9 1.6l.4 .6l-1 1l0 .7l1.9 .1l-1.1 2.2l.8 .1l1.4-2.4l.9-.3l1.1 .3l1.1-.1l2.4-1.2l-1.5-3.3l-.9-.7ZM229.7 405.8l-1.9-1.1l-.2 .7l.5 1.6l1.2-.1l.9 .5l-.3 1.1l1 .6l-.2 1.8l2.1-1.1l.9 .1l.7-1.1l-.2-1.5l-1.2-.5l-1-1.5l-2.3 .5ZM209.2 402.8l-1.4 .7l-.8-.6l-.8 .3l-2.7 1.7l-1.3-.5l-.5-1.1l-.7 1.4l-1.3 .7l.8 1.4l-.6 1l1.4 .5l.6 .7l1.5 .3l2-.7l3 .6l.9-.9l.3-1.6l1-2l-.3-.9l-1.1-1ZM228.7 398.1l-1.4 .5l-.9 1.5l1.5 1.1l.2 .9l-1.1 .5l.5 1.6l1.5-.6l.6 .4l1.5-.2l.4-1l-.8-1.2l-2.3-.2l1.3-2.5l-1-.8ZM252.5 399.4l-.6-.5l-.3-1.3l-1.4-.4l-2.2 1.4l0 .8l1.8 2.6l2.1 .4l.8 1.1l1.4 .1l.3-1.4l-1-.6l-.1-1.2l-.8-1ZM133.5 394.2l-1 .8l.9 1.4l-1.2 2.4l-1.3 .4l-.2 1l-1 .8l.1 1.7l-2.4 .1l-.1 1l-2.2 .9l-.9 1l-1.4 .7l.2 .8l-1.3 .8l-1 2.2l.8 1.7l.8 .6l.4 1.4l2.2 .2l-.8 1.4l1.8-.2l.1 .9l1.3 .4l.6-.6l1.8 .1l3.2-2l1.4 0l-.1-1.3l1.3-.4l.5 .8l-.3 1.5l1.7 .2l.6-.5l-.2-1l-1.3-1l1.8-1.2l1.1 1.1l.8-.6l-.2-1.1l1-.8l.3-.8l1.1-1.2l-.6-1.2l1.1-1.4l-1.1-.4l.2-.8l1-.2l.7-1.7l-.4-1l-3.2-3l-1.7 0l-1-1.1l.6-1l-2.4-1.8l-2.1 0ZM118.3 389.9l-.7 .1l-.2 1.7l1-.2l.6 .9l.6 1.8l.8 .4l-1.6 1.9l-1.4-.5l-.7 .7l.6 1.2l-.2 .8l1 .7l2.4-1.6l-.2-.9l1.4-.1l-.4-1.7l1.2-1.4l-1.1-.8l.4-.8l-1.2-.3l-.4-.9l-1-1l-.9 0ZM115.1 389.2l-.5 .3l.4 1.6l-.4 .8l1.2 1.2l-.9 1.1l1.3 1.1l1.6 .2l1-1.2l-.7-1.9l-.8 0l-1-1l.5-1.7l-1.7-.5ZM126.3 385.9l-.5-.3l-2.1 2l.4 1l-.8 1.2l1.2 1l2.1-.9l.4 .6l1.3-1.5l.2-1.3l-2.2-1.8ZM68.6 383.3l-.8-.2l-.4 1.3l-.9 1l0 1.2l-.9 .6l-.1 1.2l1.4 1.8l.7 0l0-1.8l1.2-.2l-.4-1.2l1.6-.7l.6-2l-1.6 .1l-.4-1.1ZM253.8 381.8l-1-1.2l-1.3-.7l-1.5 .2l1.5 2.1l-.2 .9l.6 1.3l-.6 .3l-.5 1.2l-.8 .9l-1.3 .6l-.2 1.1l.5 .5l-.9 1.6l.5 .7l1.4 .3l1 1.7l1.3 .1l1.5 .7l1.5-.5l-.2-1.1l-1.1-.4l.3-2l.6-.4l-.4-3.6l-1.3-1.1l.1-1.8l-1.1 .3l-.5-.9l.5-.7l1.6-.1ZM111.4 380.5l-.5-1.1l-2.1 2l-1.7 .4l0 3l1.4 .2l.4 1l1.5 0l-.3 .9l.9 .2l1.1-.7l-.1-.7l2.6-1.8l-.2-1.3l-.7 0l-.7-1.5l-1.6-.6ZM121.9 376.5l-2.1 .3l.3 1.3l-.6 .3l-.3 1.1l1 1.9l3.3-.8l.8-.4l1.2 1.4l-.3 1.2l2.2 .1l.4-2.4l-.6-2.5l-.7-.6l-2.2 .1l-.8-1.4l-1.6 .4ZM113.2 372.6l-1.3 .4l-.9 1.4l-2.2 1.1l-3.1-.1l-.6 1.1l0 1.9l-.3 .7l1.5 1.8l1.4 .4l1.4-.6l.2-1.4l-.6-1l1-.9l.8 .8l1-1l2.1-.2l-.1-2l.3-1.2l-.6-1.2ZM122.8 365.3l-.5 1.3l.5 1l-.6 .8l-2-.9l-1.7 1.5l1.2 1.5l.3 .9l.8 .4l.4 1.2l1.8 .2l.3-1.2l-.6-1.3l.8-.9l1.1 .5l.7-.8l-.1-1l-.9-.4l1.7-1.3l-.9-.9l-2.3-.6ZM136.8 368.4l.7-.4l2.5 .6l.4 .9l-.3 1.2l.3 1l1.1 .1l.9-1.6l.6-.2l-.2-1.3l-1.1-1.6l-2.7 .2l.2-1.2l-.9-.4l1-1.2l1.6-.4l-.8-1.4l-1.4 .2l-1.1-.7l-.4-.8l-1.5 1.2l1.2 .8l.6 1.1l-.8 .9l-.9-.6l-.5 2.1l-.8 .5l-1.6 .2l-.9-.6l-.5 1.6l1.1 0l.9 .6l1 .1l.9-1.5l1.4 .6ZM118.7 360.4l-.2 1.2l-.5 .8l-1.4-.1l-1.6 .4l-2.7 4l1.3 .2l.8 .6l.7-.4l1.1 .4l.6 .9l.8-.5l2.5-.8l-.2-1.2l1.1-.2l.3-1.2l-1-.4l.9-1.1l-.9-.5l-.7-1.3l-.9-.8ZM250 359.7l-.5-1.2l-2.1 2.2l0 1.6l2.6 .6l1.8-.2l.1 1.5l1.8 .7l0-2.9l-1.5-1.5l-2.2-.1l0-.7ZM124.3 351.3l-2.2 2.1l-.1 .8l2.1-.5l.4 2.8l.5 .4l1.5-.3l1.2-.6l0-1.8l-1-.7l.1-1.1l-1-.8l-1.5-.3ZM118.1 346.6l1.4 1.5l1.8 .9l1.2-1l-.2-.9l.8-1l-.2-3.5l.7-2l-.8-.2l-1.9 2.3l-1.4 1.1l-1.9 .1l.4 .8l-1 1l1.1 .9Z","label":[180,362],"pts":[[243,361],[165,398],[180,321],[220,403],[214,384],[224,344],[152,349],[212,338],[193,316],[242,348],[200,377],[165,385],[167,345],[200,350],[141,358],[178,377],[232,333],[134,344],[143,386],[153,367],[178,399],[151,320],[192,333],[239,377],[215,365],[151,400],[208,324],[183,344]]},"chung":{"d":"M214.7 170.3l-1.3-1.9l-2.1-.4l-1.8-1.3l-1.5-2.1l-2.9-.9l-.5-.8l-1.2-.1l-1.1 .4l-1.2-.5l-1.4 1.2l.5 .6l-2.7 1.1l-1.6 .8l-1.7 .5l-.8-.7l-2.4 .3l-.9 .6l-2.7 .9l-2.3 1.5l-.5 1.3l-1.6 .1l-1.7 .7l-2.5-.8l-1-.8l-.3-2.6l-.9-.2l-.7-1l0-.9l-1-2.1l.2-.8l-2.6-1.2l-2.2-.4l-2.1-.9l-1.1 .2l-3.6-.3l-6-3l-2.4-1l-.7-1.6l-1.6-.5l-.7 .5l-2 3.6l.5 1.5l-1.4 0l-2.1-.8l-.6 .3l-2.2 0l-3 .7l-1.5 .8l-.1 1.1l1.5 .4l1.6-.2l1.2 .9l-1.2 1.3l-.5-.7l-1.2 .6l.2 .9l2.2 .7l.2 .8l2.1 .1l.9 .9l-.9 .9l1 1.8l-1.3 .7l-.7 1l-1.6-.1l-.9 .6l.6 .8l-.1 1l-1 .8l-.2 1.6l-1-1.6l.4-1.1l-1.2-.3l-1.1 2l.7 .8l-.2 1.6l-2.8 .4l.5-1l1.7-1.3l-1.9-.5l.2-1l1.3-2l.5-1.3l.1-1.6l-1.5-1.5l.7-1l-.6-1.1l.7-1.5l-.4-1.7l-1.6 .4l.7 3.9l-1.4 3.1l-2.6-1.3l-3.1 1l-1.2 3l.8 1.4l-.8 1.4l-.9 .8l.9 .8l-.3 1.1l-1 .1l-.3-2.5l-.7 .8l-1 3.7l-.8 1.5l-1.7 .2l1.2 2l.4 1.2l-.7 .9l-.5 2.1l2.5-2.3l-.1-1.4l.7-.7l1-.2l1 .4l.1 .8l1.6 .8l1.3 1.4l-.4 1.1l-.8 .5l-1-.1l-2.2-1l-1.3 2.3l.4 1.5l1.5-.1l1.6 .2l1.2-1.6l1.7-.3l.6-.6l-.3-1.5l1.4 0l1.3-1.2l.3 1.1l-.1 1.5l-.8 .6l.2 2.3l1.5 .2l1.3 3.2l0 1.2l-.9 1.1l-.1 1.6l.3 1.3l2.3-1.5l1.5-1.5l1.1-.3l.9-.8l1.6 .8l2.2 .4l.2 .6l3 1.3l.7 1.2l.6 2.3l-.6 1l.4 .9l1.5 1.3l-.5 1l-.2 2.4l.2 1.3l.6 .6l-.2 1.6l1.1 1l-.3 1.7l-.6 1.2l-.6 3.1l2.2 .2l2.8 2.5l1.1 .2l-1.3 1.4l-1.8 .3l-1.3 1l1.2 2.4l.8 .4l1.5 2.9l-.6 .5l0 1.3l-.8 .8l0 1.9l.5 1.8l-1 1.5l.2 1.6l-.8 1l-1.8 0l0 2.2l1.1-1.4l1-.2l1.5 .5l1.6 1.8l.7-1l1.8 1l1.1 2l.2 .8l1.8 0l1.2 1.1l-1.2 .7l0 2.6l1.1-.2l1.9 2.5l-.6 1.9l3.6 .6l1.2 .5l1.1 0l.4-1.2l.5-1.3l4.3-.7l1.4-1.6l1.6-.3l1.8-.7l.5-.7l.3-4.2l.6-2l1.5-1.1l1.5 .6l1.5-1.4l1.9-.5l1.1 .7l3.1 .2l.5 1l.9-.3l2.2 1.4l-.5 1.1l.3 1.8l2.3 2.2l1-.3l1.6 1.1l.7-.3l.1-1.4l1-.8l1 .6l1.9-1.1l.6 .7l.9-.1l.2-1.1l1.7 .1l1.3 1.3l.7-2.7l1.7 .6l1.6-.6l.9-1.2l1 .6l.4-1.1l1.3 .2l.4 1.1l.8 .9l-.6 1l1 .8l-.2 .8l.5 1.6l-.2 1.1l1 1.2l.2 1.7l1.9 1.5l1.5-1.4l1.1-.7l.3 2l.4 .1l.4 1.5l.7 .9l.9-.4l1.5 .9l.9-.9l.6 .8l1.4-.5l.9-1.1l.2-2.9l-.6-1.5l1.7 .8l1.2 .3l.5 .6l1.3-.1l.7 1.3l1.5 .3l.3-1.6l.7-1.1l-1-.3l0-1.3l.4-1.4l1.1-.1l1.3 1.2l.4 1.6l1-.2l-.2-1l1.5-1.1l.5 .4l.1 1.7l.5 .7l3.5 .4l1.4 1.7l1.4-.4l1.1-.8l1.7-.4l.9-.6l1.7-.4l1.2 1.5l.7 .1l.5-.9l1.6-.7l1.1-1.5l1 .5l1.6-1l.8-1l-.2-1.9l.9-1.4l-.3-.8l1.8-2l-.1-1.4l.7-.6l-1-1.6l0-.7l-.6-1l.6-1.2l2.1-.9l1.1 .3l1.1 1.2l1.4-.8l-.5-1.3l-1.6-2.4l1.4-1.6l-1.7-1.1l-1.2-.4l-1.6 .9l-.7-.1l-.8 1.3l-1.8-.7l0-.8l-1.3-1.1l-1.9-.9l-.3-1.4l-.9 .9l-.7 1.8l-1.7-.4l-.7 .4l-.4-2.6l-.4-.9l.8-1.9l2.4-1.6l.3-1.7l-.2-1.6l-1.6-2.3l.8-.3l.1-2.2l-.2-1.1l.7-2.1l.1-1.3l-.6-.7l2.3-2.1l-.3-2l-2.4-1.7l.2-1l-1-1.5l-.6-.3l-2.2 .1l-2-1.5l-.1-1.4l1.9-1.1l1.5 .3l1.2-.9l-.6-.7l0-.9l1-.1l.9-1.4l1.3 .9l.1 1.2l1.3 .2l.3 1.1l1.7-.4l.1-1.7l.4-1.6l-.6-.2l-.1-1.3l-1 .1l-.3-1l-2.5-.8l1-.8l2.7 .3l.4-1.5l1.2-.1l0-1.2l.6-1.5l1.1 .4l.7 1.1l1.7 .3l1.1-1.3l2.7 2.2l1.6 0l-.2-1.4l-1.3-1.4l-1.5-1.1l0-.7l1.8-3.6l.3-2.3l1 .1l1.7 1.2l1.2-.8l.1-1l1.6-.4l.9-.8l.8 1l1.5 .1l1.1 .5l2.4 .4l-.2-3.5l1.3 .4l.7-.5l-.3-1.2l.4-.9l2 .7l1.3 .8l1.1 2l1.6 1.2l.4 .7l.9-.1l1.6 .4l1.2 1l1.2-1.1l2.9 .2l.9-1.2l.1-1l1.2-1.3l0-1.4l-1-1.1l-1-.3l.3-1.2l1-1.3l.4-1.1l-.3-1.3l1.5-.8l.2-1.1l1.1-1l2.3-1.2l.8-1.7l2.2-.5l2.2-2.8l-.6-.9l1.3-1.2l2-.1l.2-.8l1.8 1l.4-.9l1.1-1.4l-1.8-.9l-.5-1.2l-1.3 1l-2.5-.4l-1-.9l-.9 .4l-1-.4l-.2-.7l-1.6-.6l-.3-1l-1.1-1.1l-1.4 1.5l-3.2-.1l-1.2 .6l-.3-1.5l-1.8-.8l.6-1.1l-.2-.7l-1.3-1.1l-3.8 .1l-.4 .7l-1.6 .5l-.3 .7l-2.1-.4l-1-1.4l.3-1l.8-.6l1.4 .1l-.2-1.1l1.1-.4l.3-.9l1.1-.2l.3-1.5l-1.4-.8l-.5 .5l-1.5 .2l-1.6 .7l-1.4-2.1l-1.7 .2l-.6-1.2l-1-.9l-1.2 .4l-1.5 1.2l0 1.3l-1.5 .4l-1-1.3l-1.3-.5l-1.1 2.5l-2.9 1.4l-1.2 0l-1.7 .4l-.7-1.3l.8-1.3l-1.2-.9l-.3-1.8l-.9-.8l-1.8-.6l-1.2 .3l-2.4 1.4l-1.4 1.5l.9 1.8l.3 1.8l-.2 1.2l-.7 1.1l-1.3-.2l-.5 1.4l-1.2-.9l-1.1-.3l-1.3 .8l-3 .9l-2.2 .4l-2-1.7l-1-2.1l-.5-3.1l-.7 .4l-.8 2.7l-.7-.1l-1 1.5l0 1l-.7 .6l-.5 1.5l-2.3-.4l-1-1.1l-.7 1l-.4 2l.2 .5l-.3 1.8l-1 .6l-1.5 .4l.4 1l-1.2 .3l-.9-.2l-1 1.2l.3 1.4l-1 .7l-2.1-1.4l-1-.3l-.6 .9l-1 .1l-.8-.6l-1.4 .4l-.9 .6l.2 1.8l-2.4 2.2l-2.7 .4l-.7 1.4l1.2 1.6l-1.1 .3l-.9 1.4l-1.7-.3l-2.1 1.7l-1.4 .6l-1.1 0l.7 1.3l-1.3 2.2ZM143.1 199.1l-1.2-1.6l-1.4 .4l-1.5 1l.1 1.4l-.9-.1l.2 1.3l1 1.6l.4 4.4l0 2.4l-.7 1.6l.7 2.1l-.2 .5l2.2 .2l-.3 1.4l1.4 1.4l1.4-1.1l2.2 1.6l1.3-1.2l-1-2.7l-1.2-.8l.8-.8l-.6-1.2l0-.9l-.7-1.2l.1-.9l-.5-.9l-1.1 0l.4-1.1l-.9-1.5l.4-.8l-.4-1.5l-.9-.2l0-.9l.9-.2l0-1.7Z","label":[200,197],"pts":[[285,144],[250,226],[230,223],[159,189],[267,148],[149,166],[141,189],[266,250],[217,172],[189,179],[230,163],[203,222],[251,162],[168,237],[172,194],[182,214],[313,152],[240,153],[153,242],[260,210],[230,255],[174,174],[243,238],[214,236],[166,211],[279,172],[259,180],[296,167]]},"gangwon":{"d":"M250.6 139.2l.5 3.1l1 2.1l2 1.7l2.2-.4l3-.9l1.3-.8l1.1 .3l1.2 .9l.5-1.4l1.3 .2l.7-1.1l.2-1.2l-.3-1.8l-.9-1.8l1.4-1.5l2.4-1.4l1.2-.3l1.8 .6l.9 .8l.3 1.8l1.2 .9l-.8 1.3l.7 1.3l1.7-.4l1.2 0l2.9-1.4l1.1-2.5l1.3 .5l1 1.3l1.5-.4l0-1.3l1.5-1.2l1.2-.4l1 .9l.6 1.2l1.7-.2l1.4 2.1l1.6-.7l1.5-.2l.5-.5l1.4 .8l-.3 1.5l-1.1 .2l-.3 .9l-1.1 .4l.2 1.1l-1.4-.1l-.8 .6l-.3 1l1 1.4l2.1 .4l.3-.7l1.6-.5l.4-.7l3.8-.1l1.3 1.1l.2 .7l-.6 1.1l1.8 .8l.3 1.5l1.2-.6l3.2 .1l1.4-1.5l1.1 1.1l.3 1l1.6 .6l.2 .7l1 .4l.9-.4l1 .9l2.5 .4l1.3-1l.5 1.2l1.8 .9l2.9 1.2l.9 1.2l1.5-.3l1.2 .4l1 1l1.2-.6l-.8-1.7l1-1l.7-2.3l2 0l.7 1.1l1.6-.2l1.4 2.6l2.3 .6l.2-.8l1.5 .7l0-.9l1-1l1-2.6l1.8-.1l1 1.5l2-.6l1.9 .5l1.2 .1l2.8 1.2l.6-.9l.2-1.3l2-1.2l1 .7l1.2 .2l.3 .7l1.2 .4l1.5 1.1l2.6 2.7l.8-.4l2.2 .1l-.4-1.3l.4-.6l-.6-1l1.2-1.1l.7-1.1l1.3-.5l.4-1.4l1.8 .2l.8-1.4l3.1-1.7l1.5 0l-.5-1.9l-.7-1.1l-.4-2.3l.4-1.1l-.5-.9l.7-1.7l-.1-.9l-1.7-1.5l.1-1.6l-2.2-1.3l-.2-1.6l-.7 .1l-1.4-1.2l-.3-2.1l-1.3-2l.2-1.4l-2.5-1.7l-1.9-2l-.6-1.5l.3-.9l-.6-1.6l-2.1-1.8l-2.8-4.1l-.9-3l.7-.6l-.5-2.3l-2.6-2l-2.1-2.1l-.8-1.6l.9-1.6l0-2l-3-2.8l-1.7-2.1l-.6-1.4l-1.5-1.2l-1.8-2l-5-5.2l-.4-1.4l-1.6-1.5l-2.1-2.7l.3-1.4l-2.9-2.8l-.9-1.5l-1.8-2.2l-.2-1.3l-2.3-2.7l.5-1.3l-.9-.3l-2.2-2.1l-1.7-2.2l-.1-1.2l-3-3.5l-2.2-3.2l-.2-2.3l.7-.6l-1.7-2l.3-1.5l-2.9-4.1l-.9-2.7l-.1-2l-1.4-1.4l0-1.1l-1.3-1.4l-.4-1.4l.4-.7l-2.9-3.6l-1.7-3.1l1-1.2l-2.1-2.5l-.1-.8l-.7-.8l-.9-1.9l0-1.1l-1-2.1l.4-.2l-.7-1.7l-.6-.4l-1.9-2.4l-.9-1.7l-1.3 .1l-.4 .8l-1.2 .4l-.9 .7l.2 1.9l-.1 3.2l.2 2.4l-.7 1l-.3 1.6l.4 .7l-.6 .7l-1.2 3.4l-2.9 2.1l-.2 1.2l-.7 .1l-.7 1.2l-1.4 1.4l-1.3 .2l-.6 1.2l-.7-.4l-1.2 1.6l-2.5 1.5l-.9-.4l-1.7 1.1l-1.1 1.1l-2.5 .6l-1.4-.7l-1 .1l-.9 3.5l-1.9-.3l-1.9-1.9l-1.2-.6l-3.8-.6l-.5 .4l-1-.8l-1.3 .5l-.7-.2l-1.3 .8l-1.1-.2l-1.7-1.5l-.9-2.3l-1.1 .9l-1.6 .3l-1.4-.4l-1.4 .9l-1.1-.7l-.8 1.1l-1.6 .2l-1.4-.2l-2.7 0l-.8-1.1l-2.4 0l-2.2 .9l-2.8 2.3l-1.3 .4l-1.3-.7l-.4-.9l-2.5-.1l-1.3-1l-3.6-1l-1.6 1.3l-1.1-.4l-1.5 1l-1.7 0l-.5 .5l-1-1.3l-2.6-.1l-1.1-.5l-1.6 .6l-.2 .5l-4.8 1.6l-1.3-1.1l-.6 .2l-.3 1.4l-1.3 .4l-1.3 1.3l1.2 1l-.2 1.3l.5 2.1l1.3 .4l1.4-1l1.2 .4l-.2 2l1.1 1.2l-.4 .7l.8 1.2l.7 2.4l1.1 .7l1.5 1.6l.3-1.1l2.3-1.4l1.1-1.8l1.1-.1l.4 1.3l-.2 1.6l-.8 1.3l.8 2.4l2-.1l.7 2l1.3 .5l.2-1.1l2.1-.6l1-1.1l1.7 .5l.4 1l.7 .1l1.4-.9l.6 .3l.5 2.7l-.2 2.3l.6 .9l-.1 .9l.5 2.1l1.2 1l2 .3l.5 .5l2.1-.4l.7 .2l.6 2.1l0 1.2l1.1 .3l1.9 .1l1.3 .7l.1 1l.7 .4l0 1.6l.4 1.7l-.8 1.6l-.3 1.5l-1.4-.2l-1.3 .9l-.2 .8l-2.9 1.9l-.3 1.6l.9 1.2l-1.1 1.4l-.1 .7l1.5 1.7l.1 1.6l-2 1.4l-.8 .9l.5 1.3l.9-.9l1.2 .7l1.3-.9l.4 .9l-.8 3l-.2 1.9l.3 .7l-1.2 2l1.7 1.2l1.7-.4l.3-.9l1.4-.9l2 .9l1.7 1.7l1 0l.4 .7l2.6 2.1l.6 .9l1.2-.4l1.2 .3l1.2-.4l1 .9l1.4 .4l.7-.7l.8 .6l.8 1.5l1.4 .2l1.3 .9l-.5 1.3l-2.5 .1l-.3 .7l-2.5 2.3l-1.1 .4l0 1l1.1 .1l1.7 2.8l.2 2l.4 1.3l-.7 .4l-.6 2.1l-.8 1.9l.1 1.2l-1.5 .4l0 3.4l.7 2.2l-1.1 1.1l.5 2.4l-.3 1.5l-.8 1.7l.2 2.1l-.3 .4Z","label":[290,90],"pts":[[340,127],[349,136],[353,118],[339,103],[244,66],[276,35],[335,145],[256,79],[326,96],[298,110],[287,135],[327,79],[252,34],[263,58],[319,149],[239,53],[274,132],[228,42],[266,115],[265,98],[319,110],[364,151],[302,53],[264,142],[293,36],[311,130],[248,102],[302,68]]},"jeonbuk":{"d":"M242.2 250.3l-1.1 .1l-.4 1.4l0 1.3l1 .3l-.7 1.1l-.3 1.6l-1.5-.3l-.7-1.3l-1.3 .1l-.5-.6l-1.2-.3l-1.7-.8l.6 1.5l-.2 2.9l-.9 1.1l-1.4 .5l-.6-.8l-.9 .9l-1.5-.9l-.9 .4l-.7-.9l-.4-1.5l-.4-.1l-.3-2l-1.1 .7l-1.5 1.4l-1.9-1.5l-.2-1.7l-1-1.2l.2-1.1l-.5-1.6l.2-.8l-1-.8l.6-1l-.8-.9l-.4-1.1l-1.3-.2l-.4 1.1l-1-.6l-.9 1.2l-1.6 .6l-1.7-.6l-.7 2.7l-1.3-1.3l-1.7-.1l-.2 1.1l-.9 .1l-.6-.7l-1.9 1.1l-1-.6l-1 .8l-.1 1.4l-.7 .3l-1.6-1.1l-1 .3l-2.3-2.2l-.3-1.8l.5-1.1l-2.2-1.4l-.9 .3l-.5-1l-3.1-.2l-1.1-.7l-1.9 .5l-1.5 1.4l-1.5-.6l-1.5 1.1l-.6 2l-.3 4.2l-.5 .7l-1.8 .7l-1.6 .3l-1.4 1.6l-4.3 .7l-.5 1.3l1.1 .2l-.7 1.8l-1.4 .6l-2-.8l-1.7 1l-1.9 0l-1.3 .4l-9 .6l-.3 2.4l.7 1.6l-2.7 8.2l-1.7 2.4l-2-.9l.3 1.3l1.5 .7l1.8-2l.4-1.8l2.6-8.1l2.4-.1l.1 1.2l1.7 .2l0-2.6l2.2 .5l-.3 1.3l0 2.5l.2 1.2l.7 .4l3.5 .3l.7 1.3l.5 2.7l.5 .1l.2 1.5l1.2 2.8l-4.2 .5l-1.7-.8l-.8 1.3l.3 .9l.2 2.7l-1.3 1.2l-1.1 2.2l-.9 .6l-1.3 1.5l-.9-.6l-2.2-3.2l-.8-.6l-2.7-7.1l-.2 .1l2.8 7.1l1.2 1.2l1.8 2.6l-2 1l-.3 1.1l-3.6 3l-1.1 1l.2 1.6l-.3 1.5l1 .1l2.3 2.2l1.6 0l1.4-.7l.9 .1l1.3-.5l2.3 .4l1.8 0l1.9 .6l.7-.5l.6 1.2l-.3 1.5l-1.1-1.2l-1.3-.5l-.7 .7l-.8-.2l-.3 1.2l-1.2 1.6l-1.1-.3l-1.5 .2l-.5 .5l-2.3 .2l-2 1.1l-.3 .6l-1.1-.1l-1.6 3.3l-2.6 4.8l1.4 .1l.2 .6l2.4 .6l1 1.3l-.2 1.2l-1 .9l1.5 1.2l.5 1.5l.7-.3l.6 1.4l-.5 1.9l1.5 2l1.2-.6l1.9 .3l1 .9l.4-1.6l-.5-1.1l1.9-.3l1.5 1l1.3 .1l1.2-1.6l.6-1.4l1.2 .4l1.4-.3l.4-1.4l1.1 0l1-1.2l-.1-1.7l1.1-1.4l.6-1.3l-.3-2.7l1.3-1.6l3.9-.2l0-1.5l1-.2l1.3 .8l.5 1.2l1.6 .4l1 .9l1.1 .4l.4 2.4l2.2 1.7l.4 1.1l2.2 0l1-.6l-.4-2.6l.8 .1l.3-1l.7-.3l.7-2.4l.9 .7l1.6-.9l.2 3.2l1.2 .7l-.9 2.7l-.9 .8l1.4 1.3l.6-.6l1.2 1.7l-.4 1l.4 1.5l-1.5 1l-.7 .7l1.4 .5l3.5 1.7l.9 0l1.1-.8l1.3-.3l1.6-2l1.3-.1l.3 1l.9 .6l1-.1l.7-1.7l1.1 .5l1.7 1.7l2.3-.2l1.9 .9l1-.2l.6-.8l1.8-.7l1.8 1.1l1.3 .4l1.8-2.9l.4-1.4l1.3-1.1l1.3 .2l1.3-.5l1.2 .7l.9-.1l2.3 1.6l.4 .7l1.8 1.3l1 .4l.7 .9l.7 0l1.5-.9l1.2-1.4l.2-.9l-.8-1.3l-.2-1l1.2-1.1l.2-1.1l.7-1l.8-.4l1.1-1.1l.3-2.1l.7-.9l-1.6-.6l-.6 .2l-.8-1.3l.1-1.5l1.3-.8l-2.7-4.9l-2-1.2l-.5-.7l.7-1.7l1.2-1l-.3-1l.5-1.4l1.7-.9l-1.2-2.4l1.5-2.6l.2-2.2l.6-1.1l.9-.6l.2-1.4l-.1-3.5l.6-1l.7 .3l.5-.9l1.2-1.1l1.5-.8l1.6-3.2l.3-1.4l1.1 .7l1.2-.2l.5-.8l1.9-1.1l1.2-.1l.6-.8l1.2 .2l.9-1.5l.5-2.4l.8 .2l1.2-.5l-.2-2l1.8-1l-.1-1.3l-.9-3.2l-1.4-1l.1-2.5l-.7-.1l-1.2-1.5l-1.7 .4l-.9 .6l-1.7 .4l-1.1 .8l-1.4 .4l-1.4-1.7l-3.5-.4l-.5-.7l-.1-1.7l-.5-.4l-1.5 1.1l.2 1l-1 .2l-.4-1.6l-1.3-1.2Z","label":[200,284],"pts":[[152,314],[228,309],[211,310],[166,293],[243,282],[203,255],[200,273],[258,260],[167,263],[181,271],[229,284],[236,256],[214,264],[190,252],[186,307],[216,297],[172,314],[238,294],[237,269],[195,297],[219,249],[174,282],[241,311],[198,314],[221,322],[153,296],[208,322],[179,295]]},"ulleung":{"d":"M374.6 23.5l-1.8-1.9l-2.7 2l-3.1-.5l-1.6 1.6l-4.4 .3l-4.5 1.6l-2.1 1.8l-4.2 .9l2.5 3.3l-.3 5.4l1.5 2.2l3.6 .9l3.1 2.2l5.5 1.1l3-3.2l4.6-1.5l.6-5.1l1.5-4.1l-1.9-3.4l.7-3.6Z","label":[369,62],"pts":[[359,31],[367,36],[364,26],[361,40],[385,21],[385,45],[349,19],[375,49]],"dokdo":[386,33]},"jeju":{"d":"M184.5 497.8l-.1-.7l-1.6-.7l-1.1 0l-2-.4l-1-.9l-.3-1.5l-.9-.3l-1.2 .6l-1.1-.9l-1.7-.1l-.1 .7l-2 0l-.4-.2l-5.2 1.7l-1.5-1.2l-.8 1.9l-2.9-.2l-1 1.2l-2 .2l-1-.1l-1.2 .7l-1.3 .1l-1.6-.5l-.9 1l-1.1 .2l-1.3 1.1l-1.9 .4l-1.6 .8l-1 .1l-.7-.5l-1.3 1.1l-.8-.2l-1.7 1.3l-1.2 0l-.9 .7l-1.4 1.5l-1.1 .2l-.5 .7l-.9 .1l.2 1l-1 2.2l-2.2 1l-.8 1.5l-2.4 1.7l-.1 1l-1.5 1.3l.4 1.7l-.4 2.3l.6 1.7l1 1.5l1.6 1.3l1.3 .3l1.2 .8l.5 1.3l.7 .3l1.8 2.3l1.4-1.1l.6-1.6l1.8-1.6l1.1 .4l1.6-.1l1.4 .6l2.7-1.4l.8 0l1.3 .9l1.4-.7l1.6 1.8l.4-.4l1.5-.5l.9 .3l1-1.1l1.4-.1l2.1 .4l.2-.5l1.4-.1l1 .9l1.6-.8l0-.7l1.6-.7l.7-1.1l4-.2l2.8-1l.4 .4l1.9-1.4l.9-1.4l1.2 .3l1.9-.5l1.1 .1l1.3-1.3l-.2-1.2l.5-.3l1.5-1.8l-.1-.9l1.2-1.9l1.8-.8l.7-4l1.1 1l.6-.7l-1.1-1l-.2-2.9l-1.3-1l.6-1l.1-1.5l-.8-.9Z","label":[157,512],"pts":[[154,500],[168,497],[180,500],[127,517],[151,523],[135,525],[182,511],[161,524],[144,501]]}},"inset":{"x":342,"y":6,"w":54,"h":62},"borders":"M173.8 106.2l2.2-2.6M176 103.6l.5-.6l.2-1.7l1.3 1.2l2.7 1.8l1.8-.4l.2-1l1.6-.1l0-2.1l.6-1l.4-2.2l.9-.2l1.9-1l.7 .4l.8 2.1l1.3-.5l-.3-1.9l1-1l0-1.2l1.2-.6l.1-1.2l1-.3l.8 .8l1.3-.2l.2 .7l2.3-.9l1.2 .7l-.3 .9l.3 .9l-.4 1l.3 1.5l1-.1l.7 2.6l.1 1.3l-.7 2.1l-.6 .7l.3 1.9l1.8-.9l1.6-.2l2.1-1.2l.5 1.9l.1 1.4l-1.5 .1l-.8 1.1l-1.1 2.5l1.7 .8l-.3 1l-1.1 1.5l-.8-.1l-1.2 1.3l-1.1 0l-.8 .6l-.4 1l-1.2 .7l-.3 .7l-1.7 0l-1.7-2.6l-1.2 .2l-1.1-.6l-1.7 .7l-1.3 1.5l-1.4 .3l-1-1.3l-1.4 1.5l-.6 0l-.7-1.8l-1.7-3.2l-.2-.9l-1.9 2l-2-.2l0-2.2l.7-2.9l-.5-1.2l-4-.7l-.4-.6M334.2 346.3l1.4-1.2M335 344.4l1.1-.4l.6-1.1l-.8-1.6l-1.4-.3l-1-.9l-.7-1.5l1.8-.3l.5 .4l1.6-.2l1.2-.9l1.1 .3l.7-.7l0-1.1l-.8-1.8l1.2-1.2l2.7-.2l1.5-1.1l.7 .2l2.8-.4l1.1-.8l1.5-3.7l2.4-.1l.8-1.7l1.2 .4l1.3-1.3l1.7-.6l0-.7l1.1-1.6l-.2-.4l.8-1.8l-.2-.9l1.4 .1l2.3 1.3l1.6-1.5l.2-2M364.8 316.3l1.4 .8l2.7-.7l.8 .1l1.5 1.9l.2 1.5l-.4 .9l1.5 .5l.4 .6M312.1 287.6l-1.6 .8l-.2 3.5l-2 .4l-1.6-.5l-1.1 .2l-1.1 1.4l-.7-.2l-.8 .9l-.8-.1l-1.5 .8l-1-.2M299.7 294.6l1.3-.7l1.1-1.4l-.1-1.2l-2.2-2.1l-1.2-1.5l-.4-1.5l.5-1.1l1.9 .7l2.3 .6l1.1-.3l.6-.8l-.1-1.8l-.8-.7l-2.4-1.5l-.6-1.1l1-1.7l.9-2.1l1-1l1.6 .3l2.3 0l.9-1l-.1-1.3l-2.4-1.6l-2.7-.5l-2.5-.1l0-1.3l1.2-2.9l.6-.5l.9-2l.8-.7l1.9-.7l.1-.7l1.8 .9l-.3 1.9l-.6 .6l.8 1.3l2.3 .6l0-1.3l1.9-2.1l.5-1.4l-.7-3.6l1.3 0l.2 .9l2.1-1.2l.8 .1l1.6-.8l1.2-2l1.7-.4l.8 .3l3.5-.9l1.8 .8l1.3 1.5l-.3 .7l1.2 1.2l-.6 1.6l.4 1.2l-.5 1.6l1.4 1.2l.5 2.7l-.1 2.1l-1.7 1.4l-1-.6l-.1 1.7l-1.2 1.3l.7 1.9l-1.6 1.2l-1.2 .5l.3 2l.7 1.3l-.5 1.5l.2 .9l-.6 .9l-2.1 .4l-.8 .9l-2.1 .5l-.5-.7l.1-2l-.6-.8l-2.1 0l-2.8 1.9l-1.3 .7l.5 1.8l-.4 1M162 101.3l.8 .2l.9-2.3l.8-.1l.5-1l1 .2l2.2 1.5l1.1 1.5l1.3 1.3l1.5-.1l.4 1.1l1.4-.7l2.1 .7M173.8 106.2l-.4 1.8l0 1.6l-1.2 .4l-.2 2.8l1 .3l1 1.1l.8 0l-.1 1.5l-.7 1.3l.1 1.5l-1.2 1M173.6 329l-.7 1.9l1.6 .6l1.6 1l3.3-.9l.5-.7l1.2-.3l1.4-1l.8 .4l1.4-1.2l1.9 .6l.3 1l1.1 1.1l.3 1.4l.7 1.1l-.1 1.1l1.2 .7l2.6 .1l1.1 1.7l-.8 .1l-.3 2.2l.4 1.6l-.9 1.3l-1.1 .8l.1 1.1l-1.7 .5l-1.1 1.6l-1.3-.2l-1.2-1.6l-1.1 .9l-1.6 0l-1.1 .7l-1.3-.3l-.9 1.2l-1.7 .5l-.3 .7l-1.1 .1l-.7-.9l-1.1 .7l-.9 0l-.4-1l.5-.5l-.7-2.1l-2-1.6l-3.7-.3l-1 .6l-1.5-.8l-.5-.7l.3-1.6l-.1-2.7l1.3-.5l-1.3-2.2l1.9-.1l0-.8l.7-1.3l1.2 .7l1.2-.4l.1-.9l1.4-3l2.1-.4M230.8 233.8l-2 1.6l-.9 2l-.9 .6l-1-.9l-1.2-.4l-2.3-4.1l.3-1.1l-1-.9l-1.2 .3l-.2 1.4l.4 1l-.4 1.7l.3 .7l-.9 .7l-.9 2.2l-.6-1.1l-.7-.3l-.7-1.7l-.7-.5l-1 .3l-.9-1.6l-.2-2.6l-1.6-1l-1-1.4l1-.6l0-2.9l.5-1.1l1-.6l-.6-1.6l.8-1.3l-.2-1.2l.3-2.7M214.3 216.7l1.1-.8l2.3 .1l1.2-.9l.3-1.3l1.1-1.1l-.2-.7l.6-1.2l-.4-.7l2-1.7l.9 .8M223.2 209.2l.6 .7l-.3 2.5l1.3 .4l1.5-.1l1.3 .7l.8-.7l.6-1.7l1.2-.1l-.6 1.6l.4 .4l1.4-.2l.2 .6l-1 1.7l.9 2.3l.7-.2l.3-1.1l2 .1l.8 1.3l-2 2.3l.2 1.3l-.6 1.9l-1.4 1l.1 1.5l-.9 2.5l.6 1.6l-.8 1l-.2 1.1l.5 2.2M349.2 293.7l1.9-1.5l.7 .4l.9-1.8l1.8 .5l0-3.6l1-1.5l1.5-.8l2.5-.6l.6-1.1l1.5 .9l2.9-.2l.6-.5l2.3 1.7l1.8 .3l.4 1l-.2 1.8l-.4 .5l.4 1.2l1.8 .3l.7 .6l.9-.5l.6-1l1.3 .2l2-2l.8 .1l.7 .9l.8-.2l2.3 .7l1.3 .8l1.7 .4M364.8 316.3l.1-.4l1.3-1.5l-.7-1.2l-.6-.2l-.9-1.3l-1.8 .3l-2-1.3l-1.6-1.8l-1-1.5l-.2-1.5l-1.3-.4l-3-1.5l.3-1.7l-1.8 .6l-1.9 .2l-1-.4l.2-1.4l-.7-.9l-.7 .5l-.6-1l.4-.7l1.4-.4l.9-1.2l.9-.3l.5-1.6l-.2-1.3l-1.6-.7M214.3 216.7l-1.3-.2l-1.2 1l-.6-1.2l-1.3-.3l-.7-1.1l-1.3-.5l-.2-1.3l.5-.7l-1.1-2l.3-1l-1.4-.2l.1-1l-.6-.6l1-1.2l-.8-1.5l1.7-2.7l.7-.3l.4-1l-1.5-.9l.2-.7l-1.5-.3l-1.3-.9l-.4-1.1l.6-1.7l-.4-.8l.1-2l.7-1.4l-.6-1.2l-1 .2l-.6-1.5l1.9-2.7l3.4 .6l.1 .5l1.5 .5l1 .8l.7 1.1l3.1 .6M214.5 190l1.8 .8l-.2 1.4l-1.3 .8l-1 1.9l1.3 .4l1.1 3.2l-.2 1.9l1.4-.1l1.2 1.4l1.8 .7l1.4-.5l0 1.7l.5 .8l1.4 0l.5 1.7l.1 2.8l-1.1 .3M199.6 35.7l1.2 1l-.2 1.3l.5 2.1l1.3 .4l1.4-1l1.2 .4l-.2 2l1.1 1.2l-.4 .7l.8 1.2l.7 2.4l1.1 .7l1.5 1.6l.3-1.1l2.3-1.4l1.1-1.8l1.1-.1l.4 1.3l-.2 1.6l-.8 1.3l.8 2.4l2-.1l.7 2l1.3 .5l.2-1.1l2.1-.6l1-1.1l1.7 .5l.4 1l.7 .1l1.4-.9l.6 .3l.5 2.7l-.2 2.3l.6 .9l-.1 .9l.5 2.1l1.2 1l2 .3l.5 .5l2.1-.4l.7 .2l.6 2.1l0 1.2l1.1 .3l1.9 .1l1.3 .7l.1 1l.7 .4l0 1.6l.4 1.7l-.8 1.6l-.3 1.5l-1.4-.2l-1.3 .9l-.2 .8l-2.9 1.9l-.3 1.6l.9 1.2l-1.1 1.4l-.1 .7l1.5 1.7l.1 1.6l-2 1.4l-.8 .9l.5 1.3l.9-.9l1.2 .7l1.3-.9l.4 .9l-.8 3l-.2 1.9l.3 .7l-1.2 2l1.7 1.2l1.7-.4l.3-.9l1.4-.9l2 .9l1.7 1.7l1 0l.4 .7l2.6 2.1l.6 .9l1.2-.4l1.2 .3l1.2-.4l1 .9l1.4 .4l.7-.7l.8 .6l.8 1.5l1.4 .2l1.3 .9l-.5 1.3l-2.5 .1l-.3 .7l-2.5 2.3l-1.1 .4l0 1l1.1 .1l1.7 2.8l.2 2l.4 1.3l-.7 .4l-.6 2.1l-.8 1.9l.1 1.2l-1.5 .4l0 3.4l.7 2.2l-1.1 1.1l.5 2.4l-.3 1.5l-.8 1.7l.2 2.1l-.3 .4M250.6 139.2l-.7 .4l-.8 2.7l-.7-.1l-1 1.5l0 1l-.7 .6l-.5 1.5l-2.3-.4l-1-1.1l-.7 1l-.4 2l.2 .5l-.3 1.8l-1 .6l-1.5 .4l.4 1l-1.2 .3l-.9-.2l-1 1.2l.3 1.4l-1 .7l-2.1-1.4l-1-.3l-.6 .9l-1 .1l-.8-.6l-1.4 .4l-.9 .6l.2 1.8l-2.4 2.2l-2.7 .4l-.7 1.4l1.2 1.6l-1.1 .3l-.9 1.4l-1.7-.3l-2.1 1.7l-1.4 .6l-1.1 0l.7 1.3l-1.3 2.2M214.7 170.3l-1.3-1.9l-2.1-.4l-1.8-1.3l-1.5-2.1l-2.9-.9l-.5-.8l-1.2-.1l-1.1 .4l-1.2-.5l-1.4 1.2l.5 .6l-2.7 1.1l-1.6 .8l-1.7 .5l-.8-.7l-2.4 .3l-.9 .6l-2.7 .9l-2.3 1.5M377.5 145.8l-1.5 0l-3.1 1.7l-.8 1.4l-1.8-.2l-.4 1.4l-1.3 .5l-.7 1.1l-1.2 1.1l.6 1l-.4 .6l.4 1.3l-2.2-.1l-.8 .4l-2.6-2.7l-1.5-1.1l-1.2-.4l-.3-.7l-1.2-.2l-1-.7l-2 1.2l-.2 1.3l-.6 .9l-2.8-1.2l-1.2-.1l-1.9-.5l-2 .6l-1-1.5l-1.8 .1l-1 2.6l-1 1l0 .9l-1.5-.7l-.2 .8l-2.3-.6l-1.4-2.6l-1.6 .2l-.7-1.1l-2 0l-.7 2.3l-1 1l.8 1.7l-1.2 .6l-1-1l-1.2-.4l-1.5 .3l-.9-1.2l-2.9-1.2M321.7 153.6l-1.8-.9l-.5-1.2l-1.3 1l-2.5-.4l-1-.9l-.9 .4l-1-.4l-.2-.7l-1.6-.6l-.3-1l-1.1-1.1l-1.4 1.5l-3.2-.1l-1.2 .6l-.3-1.5l-1.8-.8l.6-1.1l-.2-.7l-1.3-1.1l-3.8 .1l-.4 .7l-1.6 .5l-.3 .7l-2.1-.4l-1-1.4l.3-1l.8-.6l1.4 .1l-.2-1.1l1.1-.4l.3-.9l1.1-.2l.3-1.5l-1.4-.8l-.5 .5l-1.5 .2l-1.6 .7l-1.4-2.1l-1.7 .2l-.6-1.2l-1-.9l-1.2 .4l-1.5 1.2l0 1.3l-1.5 .4l-1-1.3l-1.3-.5l-1.1 2.5l-2.9 1.4l-1.2 0l-1.7 .4l-.7-1.3l.8-1.3l-1.2-.9l-.3-1.8l-.9-.8l-1.8-.6l-1.2 .3l-2.4 1.4l-1.4 1.5l.9 1.8l.3 1.8l-.2 1.2l-.7 1.1l-1.3-.2l-.5 1.4l-1.2-.9l-1.1-.3l-1.3 .8l-3 .9l-2.2 .4l-2-1.7l-1-2.1l-.5-3.1M214.5 190l1.3-1l.7-2.3l1.4-1l1.2-.1l-.8-1.1l.2-.6l1.4-.2l.4-.5l2.2 .1l.7 1.1l.8-.2l1.1-1.1l-.6-1.2l-1.4-1l.6-1.1l-1.6-1.8l-1.9-.8l-.1-.6l-1.7-.4l.1-2.2l-2.4-.8l.4-.5l-.2-1.6l-1.6-.8M242.2 250.3l-.4-1.3l-1.2-1.2l-.1-1.1l-2.1-2.8l.1-.9l.8-1.6l0-.9l-.6-.8l.3-.7l-.4-1l.6-1l-.2-1.2l-1-1.2l-1.1-.3l-1.3 .7l-.3-1.2l-1-.4l-.4-.8l-1.1 1l-2 .2M321.7 153.6l-1.1 1.4l-.4 .9l-1.8-1l-.2 .8l-2 .1l-1.3 1.2l.6 .9l-2.2 2.8l-2.2 .5l-.8 1.7l-2.3 1.2l-1.1 1l-.2 1.1l-1.5 .8l.3 1.3l-.4 1.1l-1 1.3l-.3 1.2l1 .3l1 1.1l0 1.4l-1.2 1.3l-.1 1l-.9 1.2l-2.9-.2l-1.2 1.1l-1.2-1l-1.6-.4l-.9 .1l-.4-.7l-1.6-1.2l-1.1-2l-1.3-.8l-2-.7l-.4 .9l.3 1.2l-.7 .5l-1.3-.4l.2 3.5l-2.4-.4l-1.1-.5l-1.5-.1l-.8-1l-.9 .8l-1.6 .4l-.1 1l-1.2 .8l-1.7-1.2l-1-.1l-.3 2.3l-1.8 3.6l0 .7l1.5 1.1l1.3 1.4l.2 1.4l-1.6 0l-2.7-2.2l-1.1 1.3l-1.7-.3l-.7-1.1l-1.1-.4l-.6 1.5l0 1.2l-1.2 .1l-.4 1.5l-2.7-.3l-1 .8l2.5 .8l.3 1l1-.1l.1 1.3l.6 .2l-.4 1.6l-.1 1.7l-1.7 .4l-.3-1.1l-1.3-.2l-.1-1.2l-1.3-.9l-.9 1.4l-1 .1l0 .9l.6 .7l-1.2 .9l-1.5-.3l-1.9 1.1l.1 1.4l2 1.5l2.2-.1l.6 .3l1 1.5l-.2 1l2.4 1.7l.3 2l-2.3 2.1l.6 .7l-.1 1.3l-.7 2.1l.2 1.1l-.1 2.2l-.8 .3l1.6 2.3l.2 1.6l-.3 1.7l-2.4 1.6l-.8 1.9l.4 .9l.4 2.6l.7-.4l1.7 .4l.7-1.8l.9-.9l.3 1.4l1.9 .9l1.3 1.1l0 .8l1.8 .7l.8-1.3l.7 .1l1.6-.9l1.2 .4l1.7 1.1l-1.4 1.6l1.6 2.4l.5 1.3l-1.4 .8l-1.1-1.2l-1.1-.3l-2.1 .9l-.6 1.2l.6 1l0 .7l1 1.6l-.7 .6l.1 1.4l-1.8 2l.3 .8l-.9 1.4l.2 1.9l-.8 1l-1.6 1l-1-.5l-1.1 1.5l-1.6 .7l-.5 .9M260.9 254.7l-.7-.1l-1.2-1.5l-1.7 .4l-.9 .6l-1.7 .4l-1.1 .8l-1.4 .4l-1.4-1.7l-3.5-.4l-.5-.7l-.1-1.7l-.5-.4l-1.5 1.1l.2 1l-1 .2l-.4-1.6l-1.3-1.2M242.2 250.3l-1.1 .1l-.4 1.4l0 1.3l1 .3l-.7 1.1l-.3 1.6l-1.5-.3l-.7-1.3l-1.3 .1l-.5-.6l-1.2-.3l-1.7-.8l.6 1.5l-.2 2.9l-.9 1.1l-1.4 .5l-.6-.8l-.9 .9l-1.5-.9l-.9 .4l-.7-.9l-.4-1.5l-.4-.1l-.3-2l-1.1 .7l-1.5 1.4l-1.9-1.5l-.2-1.7l-1-1.2l.2-1.1l-.5-1.6l.2-.8l-1-.8l.6-1l-.8-.9l-.4-1.1l-1.3-.2l-.4 1.1l-1-.6l-.9 1.2l-1.6 .6l-1.7-.6l-.7 2.7l-1.3-1.3l-1.7-.1l-.2 1.1l-.9 .1l-.6-.7l-1.9 1.1l-1-.6l-1 .8l-.1 1.4l-.7 .3l-1.6-1.1l-1 .3l-2.3-2.2l-.3-1.8l.5-1.1l-2.2-1.4l-.9 .3l-.5-1l-3.1-.2l-1.1-.7l-1.9 .5l-1.5 1.4l-1.5-.6l-1.5 1.1l-.6 2l-.3 4.2l-.5 .7l-1.8 .7l-1.6 .3l-1.4 1.6l-4.3 .7l-.5 1.3M260.9 254.7l-.1 2.5l1.4 1l.9 3.2l.1 1.3l-1.8 1l.2 2M261.6 265.7l-1.2 .5l-.8-.2l-.5 2.4l-.9 1.5l-1.2-.2l-.6 .8l-1.2 .1l-1.9 1.1l-.5 .8l-1.2 .2l-1.1-.7l-.3 1.4l-1.6 3.2l-1.5 .8l-1.2 1.1l-.5 .9l-.7-.3l-.6 1l.1 3.5l-.2 1.4l-.9 .6l-.6 1.1l-.2 2.2l-1.5 2.6l1.2 2.4l-1.7 .9l-.5 1.4l.3 1l-1.2 1l-.7 1.7l.5 .7l2 1.2l2.7 4.9l-1.3 .8l-.1 1.5l.8 1.3l.6-.2l1.6 .6l-.7 .9l-.3 2.1l-1.1 1.1l-.8 .4l-.7 1l-.2 1.1l-1.2 1.1l.2 1l.8 1.3l-.2 .9l-1.2 1.4l-1.5 .9l-.7 0M237.4 323.9l-.7-.9l-1-.4l-1.8-1.3l-.4-.7l-2.3-1.6l-.9 .1l-1.2-.7l-1.3 .5l-1.3-.2l-1.3 1.1l-.4 1.4l-1.8 2.9l-1.3-.4l-1.8-1.1l-1.8 .7l-.6 .8l-1 .2l-1.9-.9l-2.3 .2l-1.7-1.7l-1.1-.5l-.7 1.7l-1 .1l-.9-.6l-.3-1l-1.3 .1l-1.6 2l-1.3 .3l-1.1 .8l-.9 0l-3.5-1.7l-1.4-.5l.7-.7l1.5-1l-.4-1.5l.4-1l-1.2-1.7l-.6 .6l-1.4-1.3l.9-.8l.9-2.7l-1.2-.7l-.2-3.2l-1.6 .9l-.9-.7l-.7 2.4l-.7 .3l-.3 1l-.8-.1l.4 2.6l-1 .6l-2.2 0l-.4-1.1l-2.2-1.7l-.4-2.4l-1.1-.4l-1-.9l-1.6-.4l-.5-1.2l-1.3-.8l-1 .2l0 1.5l-3.9 .2l-1.3 1.6l.3 2.7l-.6 1.3l-1.1 1.4l.1 1.7l-1 1.2l-1.1 0l-.4 1.4l-1.4 .3l-1.2-.4l-.6 1.4l-1.2 1.6l-1.3-.1l-1.5-1l-1.9 .3l.5 1.1l-.4 1.6l-1-.9l-1.9-.3l-1.2 .6l-1.5-2l.5-1.9l-.6-1.4l-.7 .3l-.5-1.5l-1.5-1.2l1-.9l.2-1.2l-1-1.3l-2.4-.6M237.4 323.9l0 1.3l.6 .4l.9 2.3l1.1 .6l.3 2l.6 1.6l-.3 2.2l.5 1.9l1.9 2.1l.9 .1l1.3 1.2l1.4 1.9l.1 2.1l1.6 2.2l1.3 .7l.6 1.2l2.2 1.3l.3 1.6l1 1.2l.2 1l-.5 2l-1.4 1.4l-.3 .9M299.7 294.6l-.5-.4l-.5-2.1l-.7-.9l-.9 .1l-2.5-1l-.8 .5l-1.3-.2l-1.3 .9l-1.6-1.2l-1 1.6l-2.2-.5l-1.3-1.3l-1.8 .4l-.2-1.4l.6-.6l.9 .1l.4-.7l1.2-.4l.4-1.1l-.3-1.3l.1-1.4l-1-2.7l-1.9-1.2l-.1-1.3l-.7-.9l-1.3 .2l-.7-.5l-.6-1.3l.3-1.6l-1.7-.9l-1.3-.4l-1.3-.8l-1.5 1.1l-1.7-.6l-1.4 .7l-1.2-.9l-1.1-2l-.7 .6l-1.8-.9l-.6 .7l-.8-.8l-.3-1.7l-.8-1l-2 .4l-.6-.6l0-1.6M349.2 293.7l-1.5 1.1l-1.7-.6l0-.5l-1.6-1.4l-2-.6l-2.2 1.2l-1-.3l-.1 1l-1.7 2.6l-.7 .6l-.7-.9l-2.6 1l-.7 1.7l-.7 .3l-2-.1l-2.6-1.3l-1.7 .3l-1.2-1.6l-1.8 .1l-.6-.4l-2 1l-2.2 .7l-2.3-1.2l-.9-1l-.3-1.1l-1.7-.9l-.2-1.9l.2-1.6l-.8-1.3l.2-1"};
+const REGIONS={
+  sudo:{name:'수도권',sub:'서울·인천·경기',note:'강화도 논 습지와 경기 북부의 높은 산에서 귀한 꽃을 만날 수 있어요.'},
+  gangwon:{name:'강원',sub:'강원',note:'높은 산과 강변 절벽이 많아 다른 곳에서 보기 힘든 꽃이 자라요.'},
+  chung:{name:'충청',sub:'대전·세종·충북·충남',note:'내륙의 바위 산기슭과 서해안에 귀한 꽃이 자라요.'},
+  jeonbuk:{name:'전북',sub:'전북',note:'변산반도는 남쪽 식물이 자라는 북쪽 끝이자 귀한 봄꽃의 터전이에요.'},
+  gyeongbuk:{name:'경북',sub:'대구·경북',note:'소백산 높은 숲에 봄이면 귀한 야생화가 피어요.'},
+  jeonnam:{name:'전남',sub:'광주·전남',note:'섬과 남해안이 많아 겨울에도 꽃을 볼 수 있어요.'},
+  gyeongnam:{name:'경남',sub:'부산·울산·경남',note:'따뜻한 남해안과 우포늪 같은 큰 습지가 있어요.'},
+  jeju:{name:'제주',sub:'제주',note:'곶자왈과 한라산, 바닷가의 꽃이 육지와 달라요.'},
+  ulleung:{name:'울릉·독도',sub:'울릉도·독도',note:'먼바다의 섬이라 이곳에서만 자라는 특산식물이 많아요.'},
+};
+
+const CATALOG_SRC=`복수초|Adonis amurensis|2-3|4|cup|9|이른 봄 산자락, 잔설 옆
+매화|Prunus mume|2-4|2|round|5|공원, 사찰 마당, 강변
+프리지어|Freesia refracta|2-4|2|trumpet|6|꽃집, 꽃다발
+산수유|Cornus officinalis|3-4|2|cluster|4|공원, 마을 어귀
+개나리|Forsythia koreana|3-4|1|ray|4|길가, 울타리
+진달래|Rhododendron mucronulatum|3-4|2|round|5|봄 산
+목련|Magnolia kobus|3-4|2|cup|6|학교, 공원, 아파트 화단
+왕벚나무|Prunus × yedoensis|3-4|1|round|5|가로수길, 공원
+유채|Brassica napus|3-5|2|cluster|4|제주, 강변 꽃밭
+민들레|Taraxacum spp.|3-9|1|ray|24|보도블록 틈, 풀밭
+제비꽃|Viola mandshurica|4-5|2|orchid|5|볕 드는 길가, 산기슭
+튤립|Tulipa gesneriana|4-5|1|cup|6|화단, 꽃집
+철쭉|Rhododendron schlippenbachii|4-5|2|round|5|산, 공원
+라일락|Syringa vulgaris|4-5|2|cluster|4|아파트 화단, 공원
+모란|Paeonia suffruticosa|4-5|3|layered|8|고궁, 사찰 정원
+등나무|Wisteria floribunda|5-5|2|spike|9|공원 그늘막
+아까시나무|Robinia pseudoacacia|5-5|1|spike|9|야산, 길가
+이팝나무|Chionanthus retusus|5-5|2|cluster|4|가로수길
+금낭화|Lamprocapnos spectabilis|5-6|3|spike|8|정원, 사찰
+작약|Paeonia lactiflora|5-6|3|layered|8|정원, 꽃집
+애기똥풀|Chelidonium majus|5-8|1|round|4|길가, 풀밭
+장미|Rosa hybrida|5-10|1|layered|8|담장, 공원, 꽃집
+수국|Hydrangea macrophylla|6-7|2|cluster|4|공원, 제주, 남부 지방
+라벤더|Lavandula angustifolia|6-7|3|spike|9|허브 농원, 화분
+백합|Lilium longiflorum|6-7|2|trumpet|6|정원, 꽃집
+큰금계국|Coreopsis lanceolata|6-8|1|ray|8|강변, 도로변
+접시꽃|Alcea rosea|6-8|2|round|5|담장 옆, 시골 마당
+맥문동|Liriope muscari|6-8|1|spike|9|공원 나무 밑
+봉선화|Impatiens balsamina|6-8|2|round|5|시골 마당, 화분
+개망초|Erigeron annuus|6-9|1|ray|24|빈터, 풀밭
+메리골드|Tagetes patula|6-10|1|layered|8|화단, 공원
+참나리|Lilium lancifolium|7-8|3|trumpet|6|산기슭, 정원
+능소화|Campsis grandiflora|7-8|2|trumpet|5|담장, 고택
+연꽃|Nelumbo nucifera|7-8|3|cup|14|연못, 사찰, 수목원
+해바라기|Helianthus annuus|7-9|2|ray|20|농장, 학교 화단
+나팔꽃|Ipomoea nil|7-9|1|trumpet|5|울타리, 아침에 볼 것
+달맞이꽃|Oenothera biennis|7-9|2|round|4|강변, 해 질 무렵
+닭의장풀|Commelina communis|7-9|1|orchid|3|길가 그늘
+배롱나무|Lagerstroemia indica|7-9|2|cluster|6|공원, 서원
+무궁화|Hibiscus syriacus|7-10|1|round|5|학교, 관공서 화단
+달리아|Dahlia pinnata|7-10|2|layered|8|꽃밭, 수목원
+쑥부쟁이|Aster yomena|7-10|2|ray|16|들길, 산기슭
+용담|Gentiana scabra|8-10|4|trumpet|5|가을 산
+코스모스|Cosmos bipinnatus|9-10|1|ray|8|강변, 들판
+꽃무릇|Lycoris radiata|9-10|3|ray|6|사찰 숲
+구절초|Chrysanthemum zawadskii|9-10|2|ray|16|가을 산길
+국화|Chrysanthemum × morifolium|9-11|1|ray|24|화분, 전시회, 꽃집
+산국|Chrysanthemum boreale|9-11|2|ray|12|산자락, 들길
+털머위|Farfugium japonicum|9-11|3|ray|10|남부 해안, 공원|jeju,jeonnam,gyeongnam
+감국|Chrysanthemum indicum|10-11|2|ray|14|들길, 바닷가
+애기동백|Camellia sasanqua|10-1|3|layered|6|남부 정원, 가로수|jeju,jeonnam,gyeongnam
+팬지|Viola × wittrockiana|3-5,10-12|1|round|5|화단, 화분
+시클라멘|Cyclamen persicum|11-3|2|orchid|5|꽃집, 화분
+포인세티아|Euphorbia pulcherrima|11-1|2|ray|8|꽃집, 카페
+동백|Camellia japonica|12-4|3|layered|6|남부 해안, 화분|jeju,jeonnam,gyeongnam,ulleung
+수선화|Narcissus tazetta|12-4|2|trumpet|6|제주, 남부 지방, 화분|jeju,jeonnam,gyeongnam
+호접란|Phalaenopsis aphrodite|0|2|orchid|5|꽃집, 사무실
+거베라|Gerbera jamesonii|0|1|ray|20|꽃집
+카네이션|Dianthus caryophyllus|0|1|layered|8|꽃집
+안개꽃|Gypsophila paniculata|0|1|cluster|5|꽃집, 꽃다발
+금강초롱꽃|Hanabusaya asiatica|7-9|4|trumpet|5|화악산, 설악산 같은 높은 산|sudo,gangwon
+매화마름|Ranunculus kazusensis|5-5|4|round|5|강화도와 서해안 논 습지|sudo,chung
+동강할미꽃|Pulsatilla tongkangensis|3-4|4|cup|6|정선, 영월 동강 절벽|gangwon
+메밀꽃|Fagopyrum esculentum|9-9|2|cluster|5|평창 봉평 일대|gangwon
+미선나무|Abeliophyllum distichum|3-4|3|round|4|괴산 바위 산기슭, 변산|chung,jeonbuk
+모감주나무|Koelreuteria paniculata|6-7|3|cluster|4|안면도, 포항, 대구 달성|chung,gyeongbuk
+변산바람꽃|Eranthis byunsanensis|2-3|4|round|5|변산반도 숲|jeonbuk
+노랑붓꽃|Iris koreana|4-4|4|orchid|3|변산반도|jeonbuk
+위도상사화|Lycoris uydoensis|8-8|4|trumpet|6|부안 위도, 영광 불갑산|jeonbuk,jeonnam
+홍도원추리|Hemerocallis hongdoensis|7-7|4|trumpet|6|신안 홍도|jeonnam
+진노랑상사화|Lycoris chinensis var. sinuolata|7-8|3|trumpet|6|영광 불갑산|jeonnam
+모데미풀|Megaleranthis saniculifolia|4-5|4|round|5|소백산 숲|gyeongbuk
+노랑무늬붓꽃|Iris odaesanensis|5-5|4|orchid|3|소백산 초원|gyeongbuk
+금강제비꽃|Viola diamantiaca|5-5|3|orchid|5|소백산 숲|gyeongbuk
+가시연꽃|Euryale ferox|7-9|3|cup|14|창녕 우포늪|gyeongnam
+백서향|Daphne kiusiana|2-3|3|cluster|4|거제도 등 남해안|gyeongnam
+해국|Aster spathulifolius|7-11|2|ray|20|해안 절벽과 바위틈|ulleung,gyeongbuk,gyeongnam,jeonnam
+제주백서향|Daphne jejudoensis|1-3|3|cluster|4|제주 곶자왈|jeju
+문주란|Crinum asiaticum var. japonicum|7-9|3|trumpet|6|구좌 하도리 토끼섬|jeju
+참꽃나무|Rhododendron weyrichii|4-5|3|round|5|제주 한라산|jeju
+섬말나리|Lilium hansonii|6-7|4|trumpet|6|성인봉 숲, 나리분지|ulleung
+섬기린초|Phedimus takesimensis|6-7|3|cluster|5|울릉도와 독도|ulleung
+울릉국화|Chrysanthemum zawadskii var. lucidum|9-10|4|ray|16|나리분지|ulleung
+섬바디|Dystaenia takesimana|7-8|3|cluster|5|천부 해안 도로 비탈|ulleung`;
+
+function parseMonths(src){
+  const on=Array(12).fill(false);
+  if(src==='0') return on.fill(true);
+  for(const part of src.split(',')){
+    const [a,b]=part.split('-').map(Number);
+    let m=a;
+    for(let g=0;g<12;g++){ on[m-1]=true; if(m===b) break; m=m%12+1; }
+  }
+  return on;
+}
+function monthText(src){
+  if(src==='0') return '연중';
+  return src.split(',').map(p=>{ const [a,b]=p.split('-'); return a===b?a:`${a}~${b}`; }).join(', ')+'월';
+}
+const CATALOG=CATALOG_SRC.trim().split('\n').map((l,i)=>{
+  const [name,sci,m,r,form,petals,hint,rg]=l.split('|');
+  return {no:i+1,key:'c'+(i+1),name,sci,months:parseMonths(m),mtxt:monthText(m),rarity:+r,form,petals:+petals,hint,regions:rg?rg.split(','):[]};
+});
+const REGIONAL=CATALOG.filter(c=>c.regions.length);
+const byKey=Object.fromEntries(CATALOG.map(c=>[c.key,c]));
+const byName=Object.fromEntries(CATALOG.map(c=>[c.name,c]));
+const GIFT={key:'gift',name:'이름 없는 꽃',form:'round',petals:5,rarity:1,gift:true};
+
+/* ---------- 작은 도구 ---------- */
+const $=q=>document.querySelector(q);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const pad3=n=>String(n).padStart(3,'0');
+const stars=(n,max=4)=>'★'.repeat(n)+'☆'.repeat(Math.max(0,max-n));
+const n1=v=>+v.toFixed(1);
+function rng(seed){
+  let h=2166136261;
+  for(const c of String(seed)){ h^=c.charCodeAt(0); h=Math.imul(h,16777619); }
+  return ()=>{ h^=h<<13; h^=h>>>17; h^=h<<5; return (h>>>0)/4294967296; };
+}
+function dayKey(t){ const d=new Date(t); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fmtLeft(ms){
+  const m=Math.ceil(ms/MIN);
+  if(m<60) return m+'분';
+  const h=Math.floor(m/60), r=m%60;
+  return r?`${h}시간 ${r}분`:`${h}시간`;
+}
+function fmtDate(t){ const d=new Date(t); return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`; }
+
+/* ---------- 성장 계산 ---------- */
+function progress(p,now){
+  const wet=Math.max(0,Math.min(now,p.wetUntil)-p.tick);
+  return Math.min(1,(p.grown+wet)/p.total);
+}
+function stageOf(pct){ return pct>=1?4:pct>=.6?3:pct>=.3?2:pct>=.08?1:0; }
+function settle(p,now){ p.grown=Math.min(p.total,p.grown+Math.max(0,Math.min(now,p.wetUntil)-p.tick)); p.tick=now; }
+function settleDew(st,now){
+  if(st.water>=DEW_MAX){ st.waterAt=now; return; }
+  const gain=Math.floor((now-st.waterAt)/DEW_MS);
+  if(gain>0){
+    st.water=Math.min(DEW_MAX,st.water+gain);
+    st.waterAt=st.water>=DEW_MAX?now:st.waterAt+gain*DEW_MS;
+  }
+}
+const xpFor=l=>50*l*(l-1);
+function levelOf(xp){ let l=1; while(xp>=xpFor(l+1)) l++; return l; }
+const plotsFor=l=>l>=5?12:l>=3?9:6;
+
+/* ---------- 게임 상태 ---------- */
+function newPlot(sp,now,grownShare=0){
+  const total=GROW_HOURS[sp.rarity||1]*HOUR;
+  return {key:sp.key,color:sp.color||null,core:sp.core||null,at:now,tick:now,grown:total*grownShare,total,wetUntil:now+WET_MS};
+}
+function newGame(now){
+  return {v:1,updatedAt:0,xp:0,water:DEW_MAX,waterAt:now,seeds:{},entries:{},plots:[newPlot(GIFT,now,.34),null,null,null,null,null],daily:null};
+}
+function cleanState(d,now){
+  const g=newGame(now);
+  const o=Object.assign(g,d||{});
+  o.entries=o.entries||{}; o.seeds=o.seeds||{}; o.plots=Array.isArray(o.plots)?o.plots:g.plots;
+  return o;
+}
+let s;
+function loadLocal(){
+  try{ const raw=localStorage.getItem(KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  return null;
+}
+function saveLocal(){ try{ localStorage.setItem(KEY,JSON.stringify(s)); }catch(e){} }
+function speciesOf(key){ return key==='gift'?GIFT:(s.entries[key]||byKey[key]||GIFT); }
+function photoCount(st){ return Object.values(st.entries||{}).reduce((n,e)=>n+(e.photos?e.photos.length:0),0); }
+function seedTotal(){ return Object.values(s.seeds).reduce((a,b)=>a+b,0); }
+
+/* ---------- 저장: 내 계정, 없으면 이 브라우저 ---------- */
+const CFG=window.KKOT_CONFIG||{};
+let sb=null, uid=null;
+const sync={ready:false,mode:'wait',timer:0,busy:false,again:false};
+function setSync(mode){ sync.mode=mode; renderSync(); }
+function adopt(d){
+  const remote=cleanState(JSON.parse(JSON.stringify(d)),Date.now());
+  if(photoCount(remote)>photoCount(s)||(remote.updatedAt||0)>=s.updatedAt){ s=remote; saveLocal(); renderAll(); }
+}
+async function attach(id){
+  uid=id;
+  const {data,error}=await sb.from('saves').select('data').eq('user_id',id).maybeSingle();
+  if(error){ setSync('retry'); return; }
+  const remoteAt=data&&data.data?(data.data.updatedAt||0):-1;
+  if(data&&data.data) adopt(data.data);
+  sync.ready=true; setSync('cloud');
+  if(s.updatedAt>remoteAt&&s.updatedAt>0) queueSave();
+  loadPhotoUrls();
+}
+async function connect(){
+  if(!window.supabase||!CFG.url||!CFG.key){ setSync('local'); return; }
+  try{
+    sb=window.supabase.createClient(CFG.url,CFG.key);
+    const {data}=await sb.auth.getSession();
+    if(data.session) await attach(data.session.user.id);
+    else setSync('guest');
+  }catch(e){ setSync('local'); }
+}
+/* 첫 촬영 때 게스트 계정을 만듭니다. 구경만 하는 방문자는 계정을 만들지 않습니다. */
+async function ensureUser(){
+  if(uid) return uid;
+  if(!sb) return null;
+  const {data,error}=await sb.auth.signInAnonymously();
+  if(error||!data.user) return null;
+  await attach(data.user.id);
+  return uid;
+}
+function queueSave(){
+  if(!sync.ready) return;
+  clearTimeout(sync.timer);
+  sync.timer=setTimeout(flush,700);
+}
+async function flush(){
+  if(sync.busy){ sync.again=true; return; }
+  sync.busy=true;
+  const {error}=await sb.from('saves').upsert({user_id:uid,data:JSON.parse(JSON.stringify(s)),updated_at:new Date().toISOString()});
+  if(error) setSync('retry'); else if(sync.mode==='retry') setSync('cloud');
+  sync.busy=false;
+  if(sync.again){ sync.again=false; flush(); }
+}
+function commit(){ s.updatedAt=Date.now(); saveLocal(); queueSave(); renderAll(); }
+
+/* 사진 저장 */
+const localUrls=new Map();
+function idbOpen(){ return new Promise((res,rej)=>{ const q=indexedDB.open('kkotmajung',1); q.onupgradeneeded=()=>q.result.createObjectStore('photos'); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
+async function idbPut(k,b){ const d=await idbOpen(); return new Promise((res,rej)=>{ const t=d.transaction('photos','readwrite'); t.objectStore('photos').put(b,k); t.oncomplete=res; t.onerror=()=>rej(t.error); }); }
+async function idbGet(k){ const d=await idbOpen(); return new Promise((res,rej)=>{ const q=d.transaction('photos').objectStore('photos').get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); }); }
+async function savePhoto(blob){
+  const id=await ensureUser();
+  const name=(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2))+'.jpg';
+  if(id){
+    const path=id+'/'+name;
+    const {error}=await sb.storage.from('photos').upload(path,blob,{contentType:'image/jpeg'});
+    if(!error){ localUrls.set('s:'+path,URL.createObjectURL(blob)); return 's:'+path; }
+  }
+  const k='p'+name;
+  localUrls.set('local:'+k,URL.createObjectURL(blob));
+  try{ await idbPut(k,blob); }catch(e){}
+  return 'local:'+k;
+}
+function photoSrc(pid){ return localUrls.get(pid)||''; }
+async function loadPhotoUrls(){
+  const stored=[], kept=[];
+  for(const e of Object.values(s.entries)) for(const p of e.photos||[]){
+    if(localUrls.has(p.pid)) continue;
+    if(p.pid.startsWith('s:')) stored.push(p.pid.slice(2));
+    else if(p.pid.startsWith('local:')) kept.push(p.pid);
+  }
+  if(!stored.length&&!kept.length) return;
+  if(stored.length&&sb&&uid){
+    const {data}=await sb.storage.from('photos').createSignedUrls(stored,7*24*3600);
+    for(const row of data||[]) if(row.signedUrl) localUrls.set('s:'+row.path,row.signedUrl);
+  }
+  for(const pid of kept){ try{ const b=await idbGet(pid.slice(6)); if(b) localUrls.set(pid,URL.createObjectURL(b)); }catch(e){} }
+  renderBook(); renderMonth();
+}
+document.addEventListener('error',e=>{ if(e.target&&e.target.tagName==='IMG') e.target.classList.add('broken'); },true);
+
+/* ---------- 꽃 그리기: 줄기는 선, 꽃잎 색은 사진에서 ---------- */
+const hexOk=c=>/^#[0-9a-f]{6}$/i.test(c||'');
+function shade(hex,amt){
+  const n=parseInt(hex.slice(1),16);
+  const f=v=>clamp(Math.round(v+(amt<0?v:255-v)*amt),0,255);
+  return '#'+[f(n>>16),f(n>>8&255),f(n&255)].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+function paints(sp){
+  if(hexOk(sp.color)){
+    const line='stroke="rgba(255,255,255,.55)" stroke-width=".6"';
+    return {a:`fill="${sp.color}" ${line}`,b:`fill="${shade(sp.color,-.14)}" ${line}`,core:`fill="${hexOk(sp.core)?sp.core:shade(sp.color,.45)}"`,tip:sp.color};
+  }
+  const line='stroke="currentColor" stroke-width=".8"';
+  return {a:`fill="currentColor" fill-opacity=".16" ${line}`,b:`fill="currentColor" fill-opacity=".08" ${line}`,core:`fill="currentColor" fill-opacity=".8"`,tip:null};
+}
+function petal(x,y,len,wid,rot,attr){
+  return `<path transform="translate(${n1(x)} ${n1(y)}) rotate(${n1(rot)})" d="M0 0C${n1(wid)} ${n1(-len*.3)} ${n1(wid)} ${n1(-len*.85)} 0 ${n1(-len)}C${n1(-wid)} ${n1(-len*.85)} ${n1(-wid)} ${n1(-len*.3)} 0 0Z" ${attr}/>`;
+}
+function bloomHead(sp,cx,cy,r,seed){
+  const P=paints(sp), R=rng(seed), n=clamp(sp.petals||5,3,28);
+  let o='';
+  const ring=(k,len,wid,off,attr)=>{ for(let i=0;i<k;i++) o+=petal(cx,cy,len,wid,off+i*360/k+(R()-.5)*4,attr); };
+  const dot=rr=>{ o+=`<circle cx="${n1(cx)}" cy="${n1(cy)}" r="${n1(rr)}" ${P.core}/>`; };
+  switch(sp.form){
+    case 'ray':
+      if(n>=14) ring(n,r*.8,r*.1,180/n,P.b);
+      ring(n,r,Math.max(r*.09,r*1.15/n),0,P.a); dot(r*.2); break;
+    case 'cup':{
+      const by=cy+r*.6;
+      for(const [a,l,at] of [[-36,1.32,P.b],[36,1.32,P.b],[-15,1.5,P.a],[15,1.5,P.a],[0,1.36,P.b]]) o+=petal(cx,by,r*l,r*.5,a,at);
+      break; }
+    case 'trumpet':
+      ring(n,r,r*.32,0,P.a); o+=`<circle cx="${n1(cx)}" cy="${n1(cy)}" r="${n1(r*.34)}" ${P.b}/>`; dot(r*.1); break;
+    case 'layered':
+      ring(8,r,r*.5,0,P.b); ring(7,r*.74,r*.42,20,P.a); ring(5,r*.5,r*.32,8,P.b); ring(3,r*.28,r*.2,30,P.a); break;
+    case 'cluster':
+      for(let i=0;i<20;i++){
+        const a=i*2.4, d=r*.95*Math.sqrt((i+.5)/20);
+        o+=`<circle cx="${n1(cx+Math.cos(a)*d)}" cy="${n1(cy+Math.sin(a)*d*.86)}" r="${n1(r*.2)}" ${i%2?P.a:P.b}/>`;
+      }
+      break;
+    case 'spike':
+      for(let i=0;i<9;i++){
+        const t=i/8, y=cy+r*.9-t*r*2.1, w=r*.5*(1-t*.72);
+        o+=petal(cx,y,w*1.15,w*.42,-64,P.a)+petal(cx,y,w*1.15,w*.42,64,P.b);
+      }
+      o+=petal(cx,cy-r*1.14,r*.24,r*.08,0,P.a); break;
+    case 'orchid':
+      o+=petal(cx,cy,r,r*.46,0,P.b)+petal(cx,cy,r*.92,r*.4,128,P.b)+petal(cx,cy,r*.92,r*.4,-128,P.b);
+      o+=petal(cx,cy,r*.98,r*.66,68,P.a)+petal(cx,cy,r*.98,r*.66,-68,P.a);
+      o+=petal(cx,cy+r*.04,r*.5,r*.24,180,P.core); dot(r*.1); break;
+    default:
+      ring(n,r,r*(n<=5?.62:.42),0,P.a); dot(r*.15);
+  }
+  return o;
+}
+function plantSVG(sp,stage,seed){
+  const R=rng(seed), G=142, lean=(R()-.5)*14;
+  const top=[0,22,54,90,92][stage], tx=60+lean*(top/92), ty=G-top;
+  const stem=`stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"`;
+  const leaf=`fill="currentColor" fill-opacity=".22" stroke="currentColor" stroke-width=".7"`;
+  const P=paints(sp);
+  let g='';
+  if(stage===0){
+    g+=`<path d="M60 ${G+0}v-4" ${stem} stroke-dasharray="1 2"/><ellipse cx="60" cy="${G-7}" rx="3.4" ry="5.2" transform="rotate(24 60 ${G-7})" ${leaf}/>`;
+  }else{
+    g+=`<path d="M60 ${G}Q${n1(60-lean*.3)} ${n1(G-top*.55)} ${n1(tx)} ${n1(ty)}" ${stem}/>`;
+    const pairs=stage===1?1:stage===2?2:3;
+    for(let i=0;i<pairs;i++){
+      const t=stage===1?.92:.22+i*.2, x=60+(tx-60)*t*t, y=G-top*t, len=(stage===1?13:21)-i*2.4;
+      g+=petal(x,y,len,len*.3,-52-R()*12,leaf)+petal(x,y,len,len*.3,52+R()*12,leaf);
+    }
+    if(stage===3){
+      const fill=P.tip?`fill="${P.tip}" stroke="rgba(255,255,255,.55)" stroke-width=".6"`:P.a;
+      g+=petal(tx,ty+3,19,7.2,0,fill)+petal(tx,ty+3,7,6,-30,leaf)+petal(tx,ty+3,7,6,30,leaf);
+    }
+    if(stage===4) g+=bloomHead(sp,tx,ty,sp.form==='spike'?24:27,seed);
+  }
+  const delay=n1(R()*6);
+  return `<svg class="pl" viewBox="0 12 120 134" aria-hidden="true"><path d="M6 ${G}H114" stroke="currentColor" stroke-opacity=".38" stroke-width=".8"/><g class="sway" style="animation-delay:-${delay}s">${g}</g></svg>`;
+}
+function flowerIcon(sp){
+  const y=sp.form==='spike'?60:sp.form==='cup'?46:44, r=sp.form==='spike'?28:32;
+  return `<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 ${y}V100" stroke="currentColor" stroke-width="1"/>${bloomHead({...sp,color:null},50,y,r,sp.key||sp.name)}</svg>`;
+}
+
+/* ---------- 오늘의 채집 ---------- */
+const TASK_POOL=[
+  {id:'new',label:'처음 보는 꽃 등록하기',goal:1},
+  {id:'grade3',label:'별 3개 사진 찍기',goal:1},
+  {id:'water',label:'물 3번 주기',goal:3},
+  {id:'plant',label:'씨앗 1개 심기',goal:1},
+  {id:'harvest',label:'꽃 1송이 수확하기',goal:1},
+  {id:'hue:노랑',label:'노란 꽃 찍기',goal:1},
+  {id:'hue:분홍',label:'분홍 꽃 찍기',goal:1},
+  {id:'hue:보라',label:'보라 꽃 찍기',goal:1},
+  {id:'hue:흰색',label:'흰 꽃 찍기',goal:1},
+  {id:'hue:빨강',label:'빨간 꽃 찍기',goal:1},
+];
+function ensureDaily(now){
+  const day=dayKey(now);
+  if(s.daily&&s.daily.day===day) return;
+  const R=rng(day), pool=TASK_POOL.slice(), picks=[{id:'photo',label:'꽃 1송이 찍기',goal:1,n:0}];
+  while(picks.length<3) picks.push({...pool.splice(Math.floor(R()*pool.length),1)[0],n:0});
+  s.daily={day,tasks:picks};
+}
+function bump(id,by=1){
+  ensureDaily(Date.now());
+  for(const t of s.daily.tasks){
+    if(t.id===id&&t.n<t.goal){
+      t.n=Math.min(t.goal,t.n+by);
+      if(t.n>=t.goal){ s.water=Math.min(DEW_CAP,s.water+2); gainXP(20); toast(`오늘의 채집 완료: ${t.label}. 이슬 2방울을 받았어요.`); }
+    }
+  }
+}
+function gainXP(n){
+  const before=levelOf(s.xp);
+  s.xp+=n;
+  const after=levelOf(s.xp);
+  if(after>before){
+    const want=plotsFor(after);
+    while(s.plots.length<want) s.plots.push(null);
+    toast(want>plotsFor(before)?`정원사 ${after}단계. 화단이 ${want}칸으로 넓어졌어요.`:`정원사 ${after}단계가 되었어요.`);
+  }
+}
+
+/* ---------- 화면 ---------- */
+let tab='garden', bookFilter='all', gardenSig='';
+function renderTop(){
+  const lv=levelOf(s.xp), a=xpFor(lv), b=xpFor(lv+1);
+  $('#stDew').textContent=s.water;
+  $('#stSeed').textContent=seedTotal();
+  $('#stLv').textContent=lv;
+  $('#xpBar').style.width=clamp((s.xp-a)/(b-a)*100,0,100)+'%';
+}
+function plotHTML(p,i,now){
+  if(!p) return `<button class="plot empty" data-act="plot" data-i="${i}" aria-label="빈 칸, 씨앗 심기"><span class="plot-art"><svg class="pl" viewBox="0 12 120 134" aria-hidden="true"><path d="M6 142H114" stroke="currentColor" stroke-opacity=".38" stroke-width=".8"/></svg><i class="reg"></i></span><span class="plot-name">빈 칸</span><span class="plot-meta">&nbsp;</span></button>`;
+  const sp={...speciesOf(p.key),color:p.color,core:p.core}, pct=progress(p,now), st=stageOf(pct), dry=st<4&&p.wetUntil<=now;
+  const meta=st===4?'수확할 수 있어요':dry?'물이 필요해요':STAGES[st];
+  return `<button class="plot" data-act="plot" data-i="${i}" aria-label="${esc(sp.name)}, ${meta}"><span class="plot-art">${plantSVG(sp,st,p.key+p.at)}</span><span class="plot-name">${esc(sp.name)}</span><span class="plot-meta${st===4||dry?' want':''}">${meta}</span></button>`;
+}
+function renderGarden(){
+  const now=Date.now();
+  $('#intro').hidden=photoCount(s)>0;
+  $('#plotCount').textContent=`${s.plots.filter(Boolean).length} / ${s.plots.length}칸`;
+  const sig=s.plots.map(p=>p?`${p.key}${p.at}.${stageOf(progress(p,now))}.${p.wetUntil<=now}`:'-').join('|');
+  if(sig!==gardenSig){ gardenSig=sig; $('#plots').innerHTML=s.plots.map((p,i)=>plotHTML(p,i,now)).join(''); }
+  ensureDaily(now);
+  $('#tasks').innerHTML=s.daily.tasks.map(t=>`<li class="${t.n>=t.goal?'done':''}"><span class="chk"></span><span class="t">${esc(t.label)}</span><span class="num">${t.n}/${t.goal}</span></li>`).join('');
+}
+function renderMonth(){
+  const m=new Date().getMonth();
+  const home=REGIONS[s.region];
+  $('#monthTitle').textContent=home?`${m+1}월, ${home.name}에서 만날 수 있는 꽃`:`${m+1}월에 만날 수 있는 꽃`;
+  const list=CATALOG.filter(c=>c.months[m]&&(!home||!c.regions.length||c.regions.includes(s.region))).sort((a,b)=>(!!s.entries[a.key]-!!s.entries[b.key])||(a.months.filter(Boolean).length===12)-(b.months.filter(Boolean).length===12));
+  $('#monthStrip').innerHTML=list.map(c=>{
+    const e=s.entries[c.key], ph=e&&e.photos[0];
+    return `<button class="mini" data-act="entry" data-key="${c.key}"><span class="mini-art">${flowerIcon(c)}${ph?`<img src="${esc(photoSrc(ph.pid))}" alt="" loading="lazy">`:''}</span><b>${esc(c.name)}</b><small>${esc(c.hint.split(',')[0])}</small></button>`;
+  }).join('');
+}
+function renderSync(){
+  const el=$('#syncNote'); if(!el) return;
+  el.textContent=sync.mode==='cloud'?'진행 상황은 이 기기의 게스트 계정에 저장돼요. 브라우저 데이터를 지우면 사라질 수 있어요.':sync.mode==='guest'?'첫 사진을 등록하면 게스트 계정이 만들어져요.':sync.mode==='local'?'진행 상황은 이 브라우저에만 저장돼요.':sync.mode==='retry'?'서버에 저장하지 못했어요. 이 브라우저에는 남아 있어요.':'';
+}
+function bookList(){
+  const m=new Date().getMonth();
+  const extra=Object.values(s.entries).filter(e=>e.custom).sort((a,b)=>a.firstAt-b.firstAt);
+  if(bookFilter==='extra') return extra.map((e,i)=>({key:e.key,name:e.name,no:'+'+String(i+1).padStart(2,'0'),e,sp:e}));
+  const items=CATALOG.map(c=>({key:c.key,name:c.name,no:pad3(c.no),e:s.entries[c.key],sp:c,c}));
+  if(bookFilter==='month') return items.filter(x=>x.c.months[m]);
+  if(bookFilter==='regional') return items.filter(x=>x.c.regions.length);
+  if(bookFilter==='got') return items.filter(x=>x.e);
+  return items;
+}
+/* 꽃 지도 */
+function regionData(){
+  const out={};
+  for(const id of Object.keys(REGIONS)) out[id]={species:new Map(),photos:[]};
+  for(const e of Object.values(s.entries)) for(const p of e.photos||[]){
+    const d=out[p.region]; if(!d) continue;
+    d.photos.push({pid:p.pid,t:p.t,key:e.key,name:e.name});
+    if(!d.species.has(e.key)) d.species.set(e.key,hexOk(p.color)?p.color:e.color);
+  }
+  return out;
+}
+function regionalOf(id){ return CATALOG.filter(c=>c.regions.includes(id)); }
+const PETALS5=[0,72,144,216,288].map(a=>`<circle cx="${n1(3.3*Math.sin(a*Math.PI/180))}" cy="${n1(-3.3*Math.cos(a*Math.PI/180))}" r="2.700"/>`).join('');
+function buildMap(){
+  const R=MAP.regions, I=MAP.inset;
+  $('#mapBox').innerHTML=`<svg class="map" viewBox="0 0 ${MAP.w} ${MAP.h}" role="img" aria-label="전국 꽃 지도">
+    <rect class="inset" x="${I.x}" y="${I.y}" width="${I.w}" height="${I.h}" data-act="region" data-r="ulleung"/>
+    ${Object.keys(REGIONS).map(id=>`<path class="land" id="land-${id}" d="${R[id].d}" data-act="region" data-r="${id}"/>`).join('')}
+    <path class="inner" d="${MAP.borders}"/>
+    <circle class="dokdo" cx="${R.ulleung.dokdo[0]}" cy="${R.ulleung.dokdo[1]}" r="1.600"/>
+    <g id="mapBlooms"></g><g id="mapLabels"></g></svg>`;
+  $('#mpAll').textContent=Object.keys(REGIONS).length;
+  $('#mpTotal').textContent=REGIONAL.length;
+}
+function renderMap(){
+  const data=regionData(), ids=Object.keys(REGIONS);
+  let blooms='', labels='';
+  for(const id of ids){
+    const d=data[id], pts=MAP.regions[id].pts, L=MAP.regions[id].label;
+    $('#land-'+id).classList.toggle('seen',d.species.size>0);
+    let i=0;
+    for(const color of d.species.values()){
+      const [x,y]=pts[i%pts.length]; i++;
+      if(hexOk(color)) blooms+=`<g class="mb" transform="translate(${x} ${y})"><g fill="${color}">${PETALS5}</g><circle r="1.700" fill="#F0F4F8"/></g>`;
+    }
+    const n=d.species.size;
+    labels+=`<text class="mlabel${id==='ulleung'?' sm':''}" x="${L[0]}" y="${L[1]+4}">${esc(REGIONS[id].name)}${n?` <tspan>${n}</tspan>`:''}</text>`;
+  }
+  $('#mapBlooms').innerHTML=blooms; $('#mapLabels').innerHTML=labels;
+  const seen=ids.filter(id=>data[id].species.size).length;
+  const got=REGIONAL.filter(c=>c.regions.some(r=>data[r].species.has(c.key))).length;
+  $('#mpSeen').textContent=seen; $('#mpGot').textContent=got;
+  $('#mpLead').hidden=seen>0;
+  $('#rgList').innerHTML=ids.map(id=>{
+    const list=regionalOf(id), a=list.filter(c=>data[id].species.has(c.key)).length;
+    return `<button class="rg" data-act="region" data-r="${id}"><span>${esc(REGIONS[id].name)}</span><span class="num">${a}/${list.length}</span></button>`;
+  }).join('');
+  let missing=0;
+  for(const e of Object.values(s.entries)) for(const p of e.photos||[]) if(!p.region) missing++;
+  const fix=$('#mpFix'); fix.hidden=!missing;
+  fix.textContent=missing?`지역을 고르지 않은 사진이 ${missing}장 있어요. 도감의 채집 기록에서 지역을 넣을 수 있어요.`:'';
+}
+function regionSheet(id){
+  const R=REGIONS[id], d=regionData()[id], m=new Date().getMonth();
+  const list=regionalOf(id).sort((a,b)=>(b.months[m]-a.months[m])||(d.species.has(a.key)-d.species.has(b.key))||a.no-b.no);
+  const got=list.filter(c=>d.species.has(c.key)).length;
+  const rows=list.map(c=>{
+    const color=d.species.get(c.key), sp=color?{...c,color}:c;
+    return `<button class="pick" data-act="entry" data-key="${c.key}"><span class="pick-art">${flowerMini(sp)}</span><span><b>${esc(c.name)}</b><small>${esc(c.mtxt)} · ${esc(c.hint)}</small></span>${c.months[m]?'<span class="nowtag">지금 피는 때</span>':'<span></span>'}</button>`;
+  }).join('');
+  const shots=d.photos.slice(-12).reverse();
+  openSheet(R.name,`<div>${R.sub===R.name?'':`<p class="meta">${esc(R.sub)}</p>`}<p>${esc(R.note)}</p></div>
+    <div class="stamps"><span class="stamp${d.species.size?' on':''}">찍은 꽃 ${d.species.size}종</span><span class="stamp">지역 꽃 ${got} / ${list.length}</span></div>
+    <div class="say"><h4>이 지역의 꽃</h4><div>${rows}</div></div>
+    ${shots.length?`<div class="say"><h4>여기서 찍은 사진</h4><div class="thumbs">${shots.map(p=>`<button class="thumb" data-act="entry" data-key="${esc(p.key)}" aria-label="${esc(p.name)}"><img src="${esc(photoSrc(p.pid))}" alt="" loading="lazy"></button>`).join('')}</div></div>`:''}
+    <p class="meta">귀한 꽃이 많아요. 사진으로만 담고 꺾거나 캐지 말아 주세요.</p>
+    <button class="btn pri" data-act="shootIn" data-r="${id}">여기서 꽃 찍기</button>`);
+}
+function renderBook(){
+  const m=new Date().getMonth();
+  const got=CATALOG.filter(c=>s.entries[c.key]).length, extra=Object.values(s.entries).filter(e=>e.custom).length;
+  const grown=Object.values(s.entries).filter(e=>e.bloomed>0).length;
+  $('#bkGot').textContent=got; $('#bkTotal').textContent=CATALOG.length; $('#bkBloom').textContent=grown; $('#bkExtra').textContent=extra;
+  $('#bkMeter').style.width=got/CATALOG.length*100+'%';
+  const chips=[['all','전체'],['month',`${m+1}월`],['regional','지역 꽃'],['got','모은 꽃'],['extra','도감 밖의 꽃']];
+  $('#chips').innerHTML=chips.map(([k,l])=>`<button class="chip" data-act="filter" data-f="${k}" aria-pressed="${bookFilter===k}">${l}</button>`).join('');
+  const list=bookList();
+  $('#bookGrid').innerHTML=list.length?list.map(x=>{
+    const ph=x.e&&x.e.photos[x.e.photos.length-1];
+    return `<button class="slot${x.e?' got':''}" data-act="entry" data-key="${esc(x.key)}"><span class="slot-art">${flowerIcon(x.sp)}${ph?`<img src="${esc(photoSrc(ph.pid))}" alt="${esc(x.name)} 사진" loading="lazy">`:''}${x.e&&x.e.bloomed?'<i class="seal" title="직접 키움">개화</i>':''}</span><span class="slot-no">${x.no}</span><span class="slot-name">${esc(x.name)}</span></button>`;
+  }).join(''):`<p class="empty-note">${bookFilter==='extra'?'도감 목록에 없는 꽃을 찍으면 여기에 모여요.':'아직 모은 꽃이 없어요. 촬영 버튼을 눌러 첫 꽃을 찍어 보세요.'}</p>`;
+}
+function renderAll(){ renderTop(); renderGarden(); renderMonth(); renderBook(); renderMap(); renderSync(); }
+function setTab(t){
+  tab=t;
+  for(const id of ['garden','map','book','today']) $('#'+id).hidden=t!==id;
+  document.querySelectorAll('.tab').forEach(b=>{ if(b.dataset.tab===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+  window.scrollTo(0,0);
+}
+let toastTimer=0;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{t.hidden=true;},3200); }
+
+/* ---------- 시트 ---------- */
+function openSheet(title,html){
+  const el=$('#sheet');
+  el.innerHTML=`<div class="sheet-bar"><h3>${esc(title)}</h3><button class="x" data-act="closeSheet">닫기</button></div><div class="stack">${html}</div>`;
+  el.hidden=false; $('#scrim').hidden=false; el.scrollTop=0;
+  el.querySelector('.x').focus({preventScroll:true});
+}
+function closeSheet(){ $('#sheet').hidden=true; $('#scrim').hidden=true; }
+function plantSheet(i){
+  const p=s.plots[i]; if(!p) return;
+  const now=Date.now(); settleDew(s,now); renderTop();
+  const base=speciesOf(p.key), sp={...base,color:p.color,core:p.core}, pct=progress(p,now), st=stageOf(pct), wet=p.wetUntil>now;
+  const left=(1-pct)*p.total, line=st===4?'활짝 피었어요. 수확하면 경험치를 받고 도감 기록이 채워져요.':!wet?'흙이 말라 성장이 멈췄어요. 물을 주면 다시 자랍니다.':`만개까지 ${fmtLeft(left)}. 앞으로 ${fmtLeft(p.wetUntil-now)} 동안 흙이 촉촉해요.`;
+  const giftNote=base.gift?'<p class="meta">사진을 찍지 않은 꽃이라 색이 없어요.</p>':'';
+  openSheet(sp.name,`<div class="plant-hd"><div>${plantSVG(sp,st,p.key+p.at)}</div><div class="stack"><p class="meta">${STAGES[st]} · <span class="num">${Math.floor(pct*100)}%</span></p><div class="bar"><i style="width:${pct*100}%"></i></div></div></div>
+    <p>${line}</p>${giftNote}
+    ${st===4?`<button class="btn pri" data-act="harvest" data-i="${i}">수확하기</button>`:`<button class="btn pri" data-act="water" data-i="${i}" ${s.water<1?'disabled':''}>물 주기 · 이슬 1방울</button><p class="meta">이슬 ${s.water}방울. 물을 주면 바로 8% 자라고 흙이 6시간 촉촉해져요.${s.water<DEW_MAX?` 다음 이슬까지 ${fmtLeft(Math.max(MIN,DEW_MS-(now-s.waterAt)))}.`:''}</p>`}`);
+}
+function seedSheet(i){
+  const keys=Object.keys(s.seeds).filter(k=>s.seeds[k]>0);
+  if(!keys.length){ openSheet('씨앗이 없어요',`<p>실제 꽃을 찍어 도감에 등록하면 그 꽃의 씨앗을 받아요.</p><button class="btn pri" data-act="shoot">꽃 찍으러 가기</button>`); return; }
+  openSheet('어떤 씨앗을 심을까요',`<div>${keys.map(k=>{
+    const sp=speciesOf(k);
+    return `<button class="pick" data-act="plant" data-i="${i}" data-key="${esc(k)}"><span class="pick-art">${flowerMini(sp)}</span><span><b>${esc(sp.name)}</b><small>${stars(sp.rarity)} · 만개까지 ${GROW_HOURS[sp.rarity]}시간</small></span><span class="seedn">${s.seeds[k]}</span></button>`;
+  }).join('')}</div>`);
+}
+function flowerMini(sp){ return `<svg viewBox="0 0 100 100" aria-hidden="true">${bloomHead(sp,50,50,sp.form==='spike'?30:40,sp.key)}</svg>`; }
+function calHTML(c){
+  const m=new Date().getMonth();
+  return `<div class="cal" role="img" aria-label="개화 시기">${c.months.map((on,i)=>`<span class="${on?'on':''}${i===m?' now':''}">${i+1}</span>`).join('')}</div>`;
+}
+function entrySheet(key,photoIdx){
+  const e=s.entries[key], c=byKey[key];
+  if(!e){
+    openSheet(`No.${pad3(c.no)}`,`<div class="ent-ghost">${flowerIcon(c)}</div>
+      <div><h3 class="ename">${esc(c.name)}</h3><p class="esci">${esc(c.sci)}</p></div>
+      <p class="meta">귀하기 <span class="num">${stars(c.rarity)}</span></p>
+      <div class="say"><h4>피는 달</h4>${calHTML(c)}<p class="meta" style="margin-top:6px">지역과 해마다 조금씩 달라요.</p></div>
+      <div class="say"><h4>찾아볼 곳</h4><p>${esc(c.hint)}</p>${regionLine(c)}</div>
+      <button class="btn pri" data-act="shoot">이 꽃 찍으러 가기</button>`);
+    return;
+  }
+  const photos=e.photos, idx=photoIdx==null?photos.length-1:photoIdx, ph=photos[idx];
+  const no=c?`No.${pad3(c.no)}`:'도감 밖의 꽃';
+  const bloomed=e.bloomed>0;
+  openSheet(no,`<div class="ent-photo"><img src="${esc(photoSrc(ph.pid))}" alt="${esc(e.name)} 사진"></div>
+    ${photos.length>1?`<div class="thumbs">${photos.map((p,i)=>`<button class="thumb" data-act="entryPhoto" data-key="${esc(key)}" data-idx="${i}" aria-pressed="${i===idx}" aria-label="사진 ${i+1}"><img src="${esc(photoSrc(p.pid))}" alt="" loading="lazy"></button>`).join('')}</div>`:''}
+    <div><h3 class="ename">${esc(e.name)}</h3>${e.sci?`<p class="esci">${esc(e.sci)}</p>`:''}${e.family?`<p class="meta">${esc(e.family)}</p>`:''}</div>
+    <div class="stamps"><span class="stamp on">채집 ${photos.length}회</span><span class="stamp${bloomed?' on':''}">${bloomed?`개화 ${e.bloomed}회`:'아직 키우지 않음'}</span><span class="stamp"><span class="num">${stars(e.rarity)}</span></span></div>
+    <div class="say"><h4>꽃말</h4>${bloomed?`<p class="kkot">${esc(e.kkotmal||'감정 기록이 없어요')}</p>`:'<p class="meta">이 꽃을 정원에서 끝까지 키우면 열려요.</p>'}</div>
+    ${e.fact?`<div class="say"><h4>감정 노트</h4><p>${esc(e.fact)}</p></div>`:''}
+    ${c?`<div class="say"><h4>피는 달</h4>${calHTML(c)}${regionLine(c)}</div>`:''}
+    <div class="say"><h4>채집 기록</h4><ul class="logs">${photos.map((p,i)=>({p,i})).reverse().map(({p,i})=>{
+      const where=[p.region&&REGIONS[p.region]?REGIONS[p.region].name:'',p.place].filter(Boolean).join(' · ')||'장소 기록 없음';
+      return `<li><span class="num">${fmtDate(p.t)}</span><span>${esc(where)}${p.verified?'':' · 직접 등록'}</span><span class="num">${stars(p.grade,3)}</span></li>${p.region?'':`<li class="log-fix"><label class="fld">이 사진의 지역 넣기<select data-chg="photoRegion" data-key="${esc(key)}" data-idx="${i}">${regionOptions('')}</select></label></li>`}`;
+    }).join('')}</ul></div>`);
+}
+function regionLine(c){ return c.regions.length?`<p class="meta" style="margin-top:6px">주로 ${c.regions.map(r=>REGIONS[r].name).join(', ')}</p>`:''; }
+function regionOptions(sel){ return `<option value="">지역을 고르세요</option>`+Object.keys(REGIONS).map(id=>{ const R=REGIONS[id]; return `<option value="${id}"${id===sel?' selected':''}>${esc(R.name)}${R.sub===R.name?'':` (${esc(R.sub)})`}</option>`; }).join(''); }
+function regionField(){ return `<label class="fld" for="regionSel">어느 지역인가요?<select id="regionSel">${regionOptions(REGIONS[s.region]?s.region:'')}</select></label>`; }
+
+/* ---------- 행동 ---------- */
+function doWater(i){
+  const now=Date.now(); settleDew(s,now);
+  if(s.water<1){ toast('이슬이 없어요. 40분마다 1방울씩 모여요.'); return; }
+  const full=s.water>=DEW_MAX;
+  s.water--; if(full) s.waterAt=now;
+  const p=s.plots[i]; settle(p,now);
+  p.grown=Math.min(p.total,p.grown+p.total*WATER_BOOST); p.wetUntil=now+WET_MS;
+  bump('water'); commit(); plantSheet(i);
+}
+function doPlant(i,key){
+  if(!s.seeds[key]||s.plots[i]) return;
+  s.seeds[key]--; if(!s.seeds[key]) delete s.seeds[key];
+  s.plots[i]=newPlot(speciesOf(key),Date.now());
+  bump('plant'); commit(); closeSheet();
+  toast(`${speciesOf(key).name} 씨앗을 심었어요.`);
+}
+function doHarvest(i){
+  const p=s.plots[i]; if(!p) return;
+  const sp=speciesOf(p.key);
+  s.plots[i]=null;
+  gainXP(30*sp.rarity);
+  if(p.key==='gift'){
+    bump('harvest'); commit();
+    openSheet('수확했어요',`<p>이름 없는 꽃을 끝까지 키웠어요. 이제 진짜 꽃을 찍어 와서 색이 있는 꽃을 심어 보세요.</p><button class="btn pri" data-act="shoot">꽃 찍으러 가기</button>`);
+    return;
+  }
+  const first=!s.entries[p.key].bloomed;
+  s.entries[p.key].bloomed=(s.entries[p.key].bloomed||0)+1;
+  s.seeds[p.key]=(s.seeds[p.key]||0)+1;
+  bump('harvest'); commit();
+  openSheet('수확했어요',`<div class="plant-hd"><div>${plantSVG({...sp,color:p.color,core:p.core},4,p.key+p.at)}</div><div><p class="meta">${esc(sp.name)} · 씨앗 1개와 경험치 ${30*sp.rarity}</p></div></div>
+    ${first?`<div class="say"><h4>새로 열린 꽃말</h4><p class="kkot">${esc(sp.kkotmal||'감정 기록이 없어요')}</p></div>`:''}
+    <button class="btn pri" data-act="entry" data-key="${esc(p.key)}">도감에서 보기</button>`);
+}
+
+/* ---------- 촬영과 감정 ---------- */
+const cam=$('#cam');
+let job=null;
+function loadImage(file){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(file), img=new Image();
+    img.onload=()=>res({img,url}); img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error('decode')); };
+    img.src=url;
+  });
+}
+function toBlob(c){ return new Promise(res=>c.toBlob(res,'image/jpeg',.82)); }
+function toDataUrl(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(r.error); r.readAsDataURL(blob); }); }
+function rgbToHsv(r,g,b){
+  r/=255;g/=255;b/=255;
+  const mx=Math.max(r,g,b), mn=Math.min(r,g,b), d=mx-mn;
+  let h=0;
+  if(d){ h=mx===r?((g-b)/d+6)%6:mx===g?(b-r)/d+2:(r-g)/d+4; h*=60; }
+  return [h,mx?d/mx:0,mx];
+}
+function hsvToHex(h,s2,v){
+  const f=n=>{ const k=(n+h/60)%6; return Math.round(255*(v-v*s2*Math.max(0,Math.min(k,4-k,1)))); };
+  return '#'+[f(5),f(3),f(1)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function hueName(h,sat,val){
+  if(sat<.2&&val>.6) return '흰색';
+  if(h<14||h>=345) return sat<.55&&val>.7?'분홍':'빨강';
+  if(h<42) return '주황';
+  if(h<70) return '노랑';
+  if(h<165) return '초록';
+  if(h<255) return '파랑';
+  if(h<300) return '보라';
+  return '분홍';
+}
+function pickColors(data,W,H){
+  const bins=Array.from({length:24},()=>({w:0,r:0,g:0,b:0}));
+  const light={w:0,r:0,g:0,b:0}, core={w:0,r:0,g:0,b:0};
+  const add=(t,w,r,g,b)=>{ t.w+=w;t.r+=r*w;t.g+=g*w;t.b+=b*w; };
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    const nx=(x-(W-1)/2)/(W/2), ny=(y-(H-1)/2)/(H/2), dist=Math.hypot(nx,ny), cw=1-dist;
+    if(cw<=0) continue;
+    const i=(y*W+x)*4, r=data[i], g=data[i+1], b=data[i+2], [h,sa,v]=rgbToHsv(r,g,b);
+    if(dist<.16) add(core,1,r,g,b);
+    if(v>.68&&sa<.2) add(light,cw,r,g,b);
+    if(sa>.2&&v>.18){
+      let w=cw*cw*sa*v*3;
+      if(h>=70&&h<165) w*=.1;
+      add(bins[Math.floor(h/15)%24],w,r,g,b);
+    }
+  }
+  const best=bins.reduce((a,c)=>c.w>a.w?c:a,bins[0]);
+  const mean=t=>t.w?[t.r/t.w,t.g/t.w,t.b/t.w]:[240,244,248];
+  const chosen=best.w>=light.w*.7&&best.w>0?mean(best):mean(light);
+  let [h,sa,v]=rgbToHsv(...chosen);
+  const hue=hueName(h,sa,v);
+  v=Math.max(v,.66);
+  const coreRGB=mean(core), [ch,cs,cv]=rgbToHsv(...coreRGB);
+  return {color:hsvToHex(h,sa,v),core:hsvToHex(ch,cs,Math.max(cv,.6)),hue};
+}
+function extractColors(src){
+  const W=64,H=64,c=document.createElement('canvas');
+  c.width=W;c.height=H;
+  const x=c.getContext('2d',{willReadFrequently:true});
+  x.drawImage(src,0,0,W,H);
+  return pickColors(x.getImageData(0,0,W,H).data,W,H);
+}
+function drawPrints(src){
+  const color=$('#devColor'), blue=$('#devBlue'), side=Math.min(760,Math.max(src.width,src.height)), k=side/Math.max(src.width,src.height);
+  const w=Math.round(src.width*k), h=Math.round(src.height*k);
+  for(const c of [color,blue]){ c.width=w;c.height=h; }
+  const cx=color.getContext('2d'); cx.drawImage(src,0,0,w,h);
+  const bx=blue.getContext('2d',{willReadFrequently:true}); bx.drawImage(src,0,0,w,h);
+  const img=bx.getImageData(0,0,w,h), d=img.data, lo=[11,33,69], hi=[240,244,248];
+  for(let i=0;i<d.length;i+=4){
+    const l=(d[i]*.3+d[i+1]*.59+d[i+2]*.11)/255, t=Math.pow(l,1.25);
+    d[i]=lo[0]+(hi[0]-lo[0])*t; d[i+1]=lo[1]+(hi[1]-lo[1])*t; d[i+2]=lo[2]+(hi[2]-lo[2])*t;
+  }
+  bx.putImageData(img,0,0);
+}
+function capOpen(){ $('#cap').hidden=false; $('#cap').scrollTop=0; $('#print').className='print'; $('#capBody').innerHTML=''; }
+function capClose(){ if(job&&job.ctl) job.ctl.abort(); job=null; $('#cap').hidden=true; }
+function waitUI(){
+  const t0=Date.now();
+  $('#capBody').innerHTML=`<div class="wait"><b>꽃을 감정하고 있어요</b><span class="num" id="waitSec">0초</span></div><p class="meta">사진 속 꽃의 종류와 사진 솜씨를 살피는 중이에요. 보통 몇 초에서 30초쯤 걸려요.</p><button class="btn" data-act="capCancel">취소</button>`;
+  const iv=setInterval(()=>{ const el=$('#waitSec'); if(!el){ clearInterval(iv); return; } el.textContent=Math.round((Date.now()-t0)/1000)+'초'; },1000);
+}
+function str(v,max){ return typeof v==='string'?v.trim().slice(0,max):''; }
+function readAnswer(a){
+  const o=a&&typeof a==='object'?a:{};
+  const no=Number.isInteger(o.catalogNo)&&o.catalogNo>=1&&o.catalogNo<=CATALOG.length?o.catalogNo:null;
+  const c=no?CATALOG[no-1]:null;
+  const nameKo=str(o.nameKo,30);
+  const r={
+    verdict:['real','fake','none'].includes(o.verdict)?o.verdict:'none',
+    reason:str(o.reason,120),
+    no, key:c?c.key:'x:'+nameKo,
+    name:c?c.name:nameKo, sci:c?c.sci:str(o.nameSci,60), family:str(o.family,20),
+    rarity:c?c.rarity:clamp(Math.round(Number(o.rarity))||1,1,4),
+    form:c?c.form:(FORMS.includes(o.form)?o.form:'round'),
+    petals:c?c.petals:clamp(Math.round(Number(o.petals))||5,3,28),
+    kkotmal:str(o.kkotmal,60), fact:str(o.fact,160),
+    grade:clamp(Math.round(Number(o.photoGrade))||1,1,3), note:str(o.photoNote,100),
+    verified:true,
+  };
+  if(r.verdict==='real'&&!r.name) r.verdict='none';
+  return r;
+}
+function fromName(name,base){
+  const c=byName[name];
+  if(c) return {...(base||{}),no:c.no,key:c.key,name:c.name,sci:c.sci,rarity:c.rarity,form:c.form,petals:c.petals,kkotmal:base&&base.key===c.key?base.kkotmal:'',fact:base&&base.key===c.key?base.fact:'',family:base&&base.key===c.key?base.family:''};
+  return {...(base||{}),no:null,key:'x:'+name,name,sci:'',family:'',rarity:1,form:(base&&base.form)||'round',petals:(base&&base.petals)||5,kkotmal:'',fact:''};
+}
+function resultUI(){
+  const r=job.res, isNew=!s.entries[r.key], seeds=(isNew?2:1)+(r.grade===3?1:0);
+  $('#capBody').innerHTML=`<p class="r-tag">${r.no?`No.${pad3(r.no)}`:'도감 밖의 꽃'} · ${isNew?'처음 만난 꽃':'다시 만난 꽃'} · <span class="num">${stars(r.rarity)}</span></p>
+    <div><h2 class="r-name">${esc(r.name)}</h2>${r.sci?`<p class="r-sci">${esc(r.sci)}</p>`:''}</div>
+    ${r.note?`<div class="r-grade"><span class="num" aria-label="사진 점수 ${r.grade}점">${stars(r.grade,3)}</span><span>${esc(r.note)}</span></div>`:''}
+    <label class="fld" for="fixName">꽃 이름 (틀렸다면 고쳐 주세요)<input id="fixName" list="nameList" maxlength="30" value="${esc(r.name)}" autocomplete="off"></label>
+    ${regionField()}
+    <label class="fld" for="place">자세한 장소 (선택)<input id="place" maxlength="40" placeholder="예: 덕수궁 돌담길" autocomplete="off"></label>
+    <button class="btn pri" data-act="register">도감에 등록</button>
+    <p class="meta">등록하면 씨앗 ${seeds}개와 이슬 2방울을 받아요. 처음 가는 지역이면 이슬 3방울을 더 받아요.</p>
+    <button class="linkish" data-act="capClose">등록하지 않고 닫기</button>`;
+}
+function manualUI(msg){
+  const r=job.res={verified:false,grade:1,note:'',verdict:'real',key:'',name:'',rarity:1,form:'round',petals:5,sci:'',family:'',kkotmal:'',fact:'',no:null};
+  $('#print').className='print lit';
+  $('#capBody').innerHTML=`<h2 class="r-name">이름을 직접 적어 주세요</h2><p class="meta">${esc(msg)}</p>
+    <label class="fld" for="fixName">꽃 이름<input id="fixName" list="nameList" maxlength="30" value="${esc(r.name)}" autocomplete="off"></label>
+    ${regionField()}
+    <label class="fld" for="place">자세한 장소 (선택)<input id="place" maxlength="40" placeholder="예: 덕수궁 돌담길" autocomplete="off"></label>
+    <button class="btn pri" data-act="register">도감에 등록</button>
+    <button class="linkish" data-act="capClose">등록하지 않고 닫기</button>`;
+}
+function rejectUI(r){
+  $('#print').className='print off';
+  const title=r.verdict==='fake'?'실물 꽃이 아닌 것 같아요':'꽃을 찾지 못했어요';
+  $('#capBody').innerHTML=`<h2 class="r-name">${title}</h2><p>${esc(r.reason||'꽃을 화면 가운데에 크게 담아 다시 찍어 주세요.')}</p>
+    <button class="btn pri" data-act="shoot">다시 찍기</button>
+    <div class="row"><button class="btn" data-act="capClose">닫기</button><button class="btn" data-act="manual">실제 꽃이 맞아요</button></div>`;
+}
+function failCopy(code){
+  if(code==='user_limit') return '오늘 쓸 수 있는 자동 감정 20장을 모두 썼어요. 이름을 직접 적어 등록할 수 있어요.';
+  if(code==='total_limit') return '오늘 전체 감정 횟수가 다 찼어요. 이름을 직접 적어 등록할 수 있어요.';
+  if(code==='unavailable') return '지금은 서버에 연결할 수 없어요. 이름을 직접 적어 등록할 수 있어요.';
+  return '감정에 실패했어요. 이름을 직접 적어 등록할 수 있어요.';
+}
+async function identify(blob,signal){
+  if(!await ensureUser()) throw {code:'unavailable'};
+  const image=await toDataUrl(blob);
+  const {data,error}=await sb.functions.invoke('identify',{body:{image},signal});
+  if(signal.aborted) throw {code:'cancelled'};
+  if(error) throw {code:'upstream_error'};
+  if(data&&data.error) throw {code:data.error};
+  return data;
+}
+async function startCapture(file){
+  capOpen();
+  const me=job={ctl:new AbortController(),blob:null,pal:null,res:null,done:false};
+  $('#capBody').innerHTML='<p class="meta">사진을 불러오고 있어요.</p>';
+  try{
+    const {img,url}=await loadImage(file);
+    const k=Math.min(1,1024/Math.max(img.naturalWidth,img.naturalHeight));
+    const c=document.createElement('canvas');
+    c.width=Math.round(img.naturalWidth*k); c.height=Math.round(img.naturalHeight*k);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    URL.revokeObjectURL(url);
+    drawPrints(c);
+    me.pal=extractColors(c);
+    me.blob=await toBlob(c);
+  }catch(e){
+    $('#print').className='print off';
+    $('#capBody').innerHTML=`<h2 class="r-name">사진을 열지 못했어요</h2><p>다시 한 번 찍어 주세요.</p><button class="btn pri" data-act="shoot">다시 찍기</button><button class="linkish" data-act="capClose">닫기</button>`;
+    return;
+  }
+  waitUI();
+  try{
+    const ans=await identify(me.blob,me.ctl.signal);
+    if(job!==me) return;
+    const r=readAnswer(ans);
+    if(r.verdict==='real'){ me.res=r; $('#print').classList.add('lit'); resultUI(); }
+    else rejectUI(r);
+  }catch(e){
+    if(job!==me||(e&&e.code==='cancelled')) return;
+    manualUI(failCopy(e&&e.code));
+  }
+}
+async function register(btn){
+  const me=job; if(!me||!me.res||me.done) return;
+  const typed=$('#fixName').value.trim();
+  if(!typed){ toast('꽃 이름을 적어 주세요.'); $('#fixName').focus(); return; }
+  const region=$('#regionSel').value;
+  if(!region){ toast('지도에 표시할 지역을 골라 주세요.'); $('#regionSel').focus(); return; }
+  const r=typed===me.res.name?me.res:fromName(typed,me.res);
+  const place=$('#place').value.trim();
+  btn.disabled=true; btn.textContent='사진을 저장하고 있어요';
+  const pid=await savePhoto(me.blob);
+  if(job!==me) return;
+  const now=Date.now(), isNew=!s.entries[r.key];
+  const firstHere=!Object.values(s.entries).some(x=>(x.photos||[]).some(p=>p.region===region));
+  s.region=region;
+  const e=s.entries[r.key]||(s.entries[r.key]={key:r.key,name:r.name,sci:r.sci,family:r.family,rarity:r.rarity,form:r.form,petals:r.petals,custom:!r.no,firstAt:now,bloomed:0,photos:[],kkotmal:'',fact:''});
+  e.color=me.pal.color; e.core=me.pal.core;
+  if(r.kkotmal) e.kkotmal=r.kkotmal;
+  if(r.fact) e.fact=r.fact;
+  if(r.family) e.family=r.family;
+  e.photos.push({pid,t:now,grade:r.grade,place,region,verified:r.verified,color:me.pal.color});
+  const seeds=(isNew?2:1)+(r.grade===3?1:0);
+  s.seeds[r.key]=(s.seeds[r.key]||0)+seeds;
+  s.water=Math.min(DEW_CAP,s.water+2+(firstHere?3:0));
+  if(firstHere) gainXP(50);
+  gainXP((isNew?60+40*r.rarity:15)+(r.grade-1)*10);
+  bump('photo');
+  if(isNew) bump('new');
+  if(r.grade===3) bump('grade3');
+  bump('hue:'+me.pal.hue);
+  commit();
+  me.done=true;
+  const free=s.plots.findIndex(p=>!p);
+  $('#print').classList.add('lit');
+  $('#capBody').innerHTML=`<p class="r-tag">등록을 마쳤어요</p><h2 class="r-name">${esc(r.name)}</h2><p>씨앗 ${seeds}개와 이슬 2방울을 받았어요.${firstHere?` 새 지역 ${esc(REGIONS[region].name)}에 첫 꽃이 피어서 이슬 3방울을 더 받았어요.`:''}</p>
+    ${free>=0?`<button class="btn pri" data-act="plantNow" data-i="${free}" data-key="${esc(r.key)}">정원에 바로 심기</button>`:'<p class="meta">화단이 꽉 찼어요. 꽃을 수확하면 자리가 나요.</p>'}
+    <button class="btn" data-act="seeEntry" data-key="${esc(r.key)}">도감에서 보기</button>`;
+}
+function askShoot(){
+  if(s.agreed){ cam.click(); return; }
+  openSheet('촬영 전에 확인해 주세요',`<p>찍은 사진은 꽃을 감정하기 위해 서버를 거쳐 OpenAI로 보내지고, 내 도감에 보관돼요.</p>
+    <p class="meta">사람 얼굴이나 차량 번호처럼 개인정보가 담기지 않게 꽃만 찍어 주세요. 만 14세 이상만 이용할 수 있어요.</p>
+    <button class="btn pri" data-act="agree">확인하고 촬영하기</button>`);
+}
+cam.addEventListener('change',()=>{ const f=cam.files&&cam.files[0]; cam.value=''; if(f) startCapture(f); });
+
+/* ---------- 입력 ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(!b) return;
+  const a=b.dataset.act, i=b.dataset.i==null?null:+b.dataset.i, key=b.dataset.key;
+  switch(a){
+    case 'tab': setTab(b.dataset.tab); break;
+    case 'shoot': closeSheet(); askShoot(); break;
+    case 'shootIn': s.region=b.dataset.r; saveLocal(); closeSheet(); renderMonth(); askShoot(); break;
+    case 'agree': s.agreed=Date.now(); saveLocal(); closeSheet(); cam.click(); break;
+    case 'region': regionSheet(b.dataset.r); break;
+    case 'plot': if(s.plots[i]) plantSheet(i); else seedSheet(i); break;
+    case 'plant': doPlant(i,key); break;
+    case 'water': doWater(i); break;
+    case 'harvest': doHarvest(i); break;
+    case 'entry': entrySheet(key); break;
+    case 'entryPhoto': entrySheet(key,+b.dataset.idx); break;
+    case 'filter': bookFilter=b.dataset.f; renderBook(); break;
+    case 'goMonth': bookFilter='month'; renderBook(); setTab('book'); break;
+    case 'closeSheet': closeSheet(); break;
+    case 'capCancel': capClose(); break;
+    case 'capClose': capClose(); break;
+    case 'manual': manualUI('이름을 적으면 그대로 도감에 넣을게요. 감정 기록은 남지 않아요.'); break;
+    case 'register': register(b); break;
+    case 'plantNow': capClose(); setTab('garden'); doPlant(i,key); break;
+    case 'seeEntry': capClose(); setTab('book'); entrySheet(key); break;
+  }
+});
+document.addEventListener('change',e=>{
+  const sel=e.target.closest('[data-chg="photoRegion"]'); if(!sel||!sel.value) return;
+  const key=sel.dataset.key, idx=+sel.dataset.idx, ph=s.entries[key]&&s.entries[key].photos[idx];
+  if(!ph) return;
+  ph.region=sel.value; s.region=sel.value;
+  commit(); entrySheet(key,idx);
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(!$('#sheet').hidden) closeSheet(); else if(!$('#cap').hidden) capClose(); } });
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&s){ settleDew(s,Date.now()); renderTop(); renderGarden(); } });
+setInterval(()=>{ if(s&&!document.hidden){ settleDew(s,Date.now()); renderTop(); renderGarden(); } },30000);
+
+/* ---------- 시작 ---------- */
+function grain(){
+  try{
+    const c=document.createElement('canvas'); c.width=c.height=180;
+    const x=c.getContext('2d'), R=rng('cyanotype');
+    for(let i=0;i<2600;i++){ x.fillStyle=`rgba(240,244,248,${(R()*.05).toFixed(3)})`; x.fillRect(R()*180,R()*180,1+R()*1.4,1+R()*1.4); }
+    for(let i=0;i<1400;i++){ x.fillStyle=`rgba(5,15,34,${(R()*.09).toFixed(3)})`; x.fillRect(R()*180,R()*180,1+R()*2,1+R()*2); }
+    document.documentElement.style.setProperty('--grain',`url(${c.toDataURL()})`);
+  }catch(e){}
+}
+function start(){
+  const now=Date.now();
+  s=cleanState(loadLocal()||newGame(now),now);
+  settleDew(s,now);
+  saveLocal();
+  grain();
+  $('#nameList').innerHTML=CATALOG.map(c=>`<option value="${esc(c.name)}"></option>`).join('');
+  buildMap();
+  renderAll();
+  loadPhotoUrls();
+  connect();
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+start();
+</script>
+</body>
+</html>
