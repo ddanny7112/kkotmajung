@@ -3,6 +3,6 @@
 window.KKOT_CONFIG = {
   url: 'https://imsmysfmrehbynminkvx.supabase.co',
   key: 'sb_publishable_jVJIKGWPQN7av4OQB8fZoQ_m_JkCyst',
-  ownerName: '꽃마중 운영자',
+  ownerName: '김대현',
   ownerEmail: 'kdhj33@gmail.com',
 };
