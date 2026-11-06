@@ -164,7 +164,10 @@ img.broken{opacity:0}
 .mlabel tspan{font:500 11px var(--mono);fill:var(--mist)}
 .mb{pointer-events:none}
 .rgs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px;margin-top:14px;border-top:1px solid var(--hair)}
-.rg{display:flex;justify-content:space-between;align-items:baseline;gap:8px;text-align:left;min-height:44px;padding-block:9px;border-bottom:1px solid var(--hair)}
+.rg-name{display:flex;align-items:center;gap:7px;min-width:0}
+.badge{width:22px;height:22px;flex:none;color:var(--faint)}
+.badge.got{color:var(--paper)}
+.rg{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;min-height:44px;padding-block:9px;border-bottom:1px solid var(--hair)}
 .rg .num{font-size:13px;color:var(--mist)}
 .nowtag{font-size:12px;line-height:1.3;padding:1px 7px;background:var(--paper);color:var(--ground-deep)}
 .log-fix{display:block!important}
@@ -299,6 +302,7 @@ img.broken{opacity:0}
     <p id="mpLead" class="lead" style="margin-top:8px">꽃을 등록할 때 지역을 고르면 그 사진의 색으로 지도에 꽃이 핍니다.</p>
     <div id="mapBox" class="mapbox"></div>
     <div id="rgList" class="rgs"></div>
+    <p class="note" style="margin-top:10px">한 지역의 꽃을 그 지역에서 모두 찍으면 지역 배지를 받아요.</p>
     <p id="mpFix" class="note" style="margin-top:10px" hidden></p>
   </section>
   <p class="note">지역 경계는 통계청 센서스용 행정구역경계(2018)를 간략화했어요. 울릉도·독도는 확대해서 표시했어요.</p>
@@ -538,7 +542,7 @@ function newPlot(sp,now,grownShare=0){
   return {key:sp.key,color:sp.color||null,core:sp.core||null,at:now,tick:now,grown:total*grownShare,total,wetUntil:now+WET_MS};
 }
 function newGame(now){
-  return {v:1,updatedAt:0,xp:0,water:DEW_MAX,waterAt:now,seeds:{},entries:{},plots:[newPlot(GIFT,now,.34),null,null,null,null,null],daily:null};
+  return {v:1,updatedAt:0,xp:0,water:DEW_MAX,waterAt:now,seeds:{},entries:{},badges:{},plots:[newPlot(GIFT,now,.34),null,null,null,null,null],daily:null};
 }
 /* 화단은 6칸입니다. 예전 기록에서 6칸을 넘겨 심은 꽃은 사라지지 않게 수확할 때까지 둡니다. */
 function fitPlots(list){
@@ -549,7 +553,7 @@ function fitPlots(list){
 function cleanState(d,now){
   const g=newGame(now);
   const o=Object.assign(g,d||{});
-  o.entries=o.entries||{}; o.seeds=o.seeds||{}; o.plots=fitPlots(Array.isArray(o.plots)?o.plots:g.plots);
+  o.entries=o.entries||{}; o.seeds=o.seeds||{}; o.badges=o.badges||{}; o.plots=fitPlots(Array.isArray(o.plots)?o.plots:g.plots);
   return o;
 }
 let s;
@@ -569,7 +573,7 @@ const sync={ready:false,mode:'wait',timer:0,busy:false,again:false};
 function setSync(mode){ sync.mode=mode; renderSync(); }
 function adopt(d){
   const remote=cleanState(JSON.parse(JSON.stringify(d)),Date.now());
-  if(photoCount(remote)>photoCount(s)||(remote.updatedAt||0)>=s.updatedAt){ s=remote; saveLocal(); renderAll(); }
+  if(photoCount(remote)>photoCount(s)||(remote.updatedAt||0)>=s.updatedAt){ s=remote; checkBadges(); saveLocal(); renderAll(); }
 }
 async function attach(id){
   uid=id;
@@ -612,7 +616,12 @@ async function flush(){
   sync.busy=false;
   if(sync.again){ sync.again=false; flush(); }
 }
-function commit(){ s.updatedAt=Date.now(); saveLocal(); queueSave(); renderAll(); }
+function commit(){
+  const fresh=checkBadges();
+  s.updatedAt=Date.now(); saveLocal(); queueSave(); renderAll();
+  if(fresh.length){ haptic('success'); toast(badgeLine(fresh)); }
+  return fresh;
+}
 
 /* 사진 저장 */
 const localUrls=new Map();
@@ -854,6 +863,21 @@ function regionData(){
   return out;
 }
 function regionalOf(id){ return CATALOG.filter(c=>c.regions.includes(id)); }
+function checkBadges(){
+  const data=regionData(), fresh=[];
+  for(const id of Object.keys(REGIONS)){
+    const list=regionalOf(id);
+    if(!s.badges[id]&&list.length&&list.every(c=>data[id].species.has(c.key))){ s.badges[id]=Date.now(); fresh.push(id); }
+  }
+  return fresh;
+}
+function badgeLine(ids){ return `${ids.map(id=>REGIONS[id].name).join(', ')} 배지를 받았어요. 지역 꽃을 모두 모았어요.`; }
+function badgeIcon(id,data){
+  if(!s.badges[id]) return '<svg class="badge" viewBox="-11 -11 22 22" aria-hidden="true"><circle r="9.6" fill="none" stroke="currentColor" stroke-dasharray="1.6 2.2"/></svg>';
+  const colors=regionalOf(id).map(c=>data[id].species.get(c.key)).filter(hexOk);
+  const petals=[0,72,144,216,288].map((a,i)=>`<circle cx="${n1(4.6*Math.sin(a*Math.PI/180))}" cy="${n1(-4.6*Math.cos(a*Math.PI/180))}" r="3.4" fill="${colors[i%colors.length]||'#F0F4F8'}"/>`).join('');
+  return `<svg class="badge got" viewBox="-11 -11 22 22" role="img" aria-label="${esc(REGIONS[id].name)} 배지"><circle r="10" fill="none" stroke="currentColor"/>${petals}<circle r="2.1" fill="#F0F4F8"/></svg>`;
+}
 const PETALS5=[0,72,144,216,288].map(a=>`<circle cx="${n1(3.3*Math.sin(a*Math.PI/180))}" cy="${n1(-3.3*Math.cos(a*Math.PI/180))}" r="2.700"/>`).join('');
 function buildMap(){
   const R=MAP.regions, I=MAP.inset;
@@ -887,7 +911,7 @@ function renderMap(){
   $('#mpLead').hidden=seen>0;
   $('#rgList').innerHTML=ids.map(id=>{
     const list=regionalOf(id), a=list.filter(c=>data[id].species.has(c.key)).length;
-    return `<button class="rg" data-act="region" data-r="${id}"><span>${esc(REGIONS[id].name)}</span><span class="num">${a}/${list.length}</span></button>`;
+    return `<button class="rg" data-act="region" data-r="${id}"><span class="rg-name">${badgeIcon(id,data)}${esc(REGIONS[id].name)}</span><span class="num">${a}/${list.length}</span></button>`;
   }).join('');
   let missing=0;
   for(const e of Object.values(s.entries)) for(const p of e.photos||[]) if(!p.region) missing++;
@@ -904,7 +928,8 @@ function regionSheet(id){
   }).join('');
   const shots=d.photos.slice(-12).reverse();
   openSheet(R.name,`<div>${R.sub===R.name?'':`<p class="meta">${esc(R.sub)}</p>`}<p>${esc(R.note)}</p></div>
-    <div class="stamps"><span class="stamp${d.species.size?' on':''}">찍은 꽃 ${d.species.size}종</span><span class="stamp">지역 꽃 ${got} / ${list.length}</span></div>
+    <div class="stamps"><span class="stamp${d.species.size?' on':''}">찍은 꽃 ${d.species.size}종</span><span class="stamp">지역 꽃 ${got} / ${list.length}</span>${s.badges[id]?'<span class="stamp on">배지 획득</span>':''}</div>
+    ${s.badges[id]?'':'<p class="meta">이 지역의 꽃을 여기서 모두 찍으면 배지를 받아요.</p>'}
     <div class="say"><h4>이 지역의 꽃</h4><div>${rows}</div></div>
     ${shots.length?`<div class="say"><h4>여기서 찍은 사진</h4><div class="thumbs">${shots.map(p=>`<button class="thumb" data-act="entry" data-key="${esc(p.key)}" aria-label="${esc(p.name)}"><img src="${esc(photoSrc(p.pid))}" alt="" loading="lazy"></button>`).join('')}</div></div>`:''}
     <p class="meta">귀한 꽃이 많아요. 사진으로만 담고 꺾거나 캐지 말아 주세요.</p>
@@ -1309,11 +1334,11 @@ async function register(btn){
   if(isNew) bump('new');
   if(r.grade===3) bump('grade3');
   bump('hue:'+me.pal.hue);
-  commit();
+  const fresh=commit();
   me.done=true;
   const free=s.plots.findIndex(p=>!p);
   $('#print').classList.add('lit');
-  $('#capBody').innerHTML=`<p class="r-tag">등록을 마쳤어요</p><h2 class="r-name">${esc(r.name)}</h2>${r.no&&isNew&&CATALOG[r.no-1].dex?`<p class="dex">${esc(CATALOG[r.no-1].dex)}</p>`:''}<p>씨앗 ${seeds}개와 이슬 2방울을 받았어요.${firstHere?` 새 지역 ${esc(REGIONS[region].name)}에 첫 꽃이 피어서 이슬 3방울을 더 받았어요.`:''}</p>
+  $('#capBody').innerHTML=`<p class="r-tag">등록을 마쳤어요</p><h2 class="r-name">${esc(r.name)}</h2>${r.no&&isNew&&CATALOG[r.no-1].dex?`<p class="dex">${esc(CATALOG[r.no-1].dex)}</p>`:''}<p>씨앗 ${seeds}개와 이슬 2방울을 받았어요.${firstHere?` 새 지역 ${esc(REGIONS[region].name)}에 첫 꽃이 피어서 이슬 3방울을 더 받았어요.`:''}</p>${fresh.length?`<p>${esc(badgeLine(fresh))}</p>`:''}
     ${free>=0?`<button class="btn pri" data-act="plantNow" data-i="${free}" data-key="${esc(r.key)}">정원에 바로 심기</button>`:'<p class="meta">화단이 꽉 찼어요. 꽃을 수확하면 자리가 나요.</p>'}
     <button class="btn" data-act="seeEntry" data-key="${esc(r.key)}">도감에서 보기</button>`;
 }
@@ -1435,6 +1460,7 @@ function start(){
   const now=Date.now();
   s=cleanState(loadLocal()||newGame(now),now);
   settleDew(s,now);
+  checkBadges();
   saveLocal();
   grain();
   $('#nameList').innerHTML=CATALOG.map(c=>`<option value="${esc(c.name)}"></option>`).join('');
