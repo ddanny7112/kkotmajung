@@ -6,7 +6,10 @@
 <title>꽃마중 개인정보처리방침</title>
 <meta name="theme-color" content="#12315F">
 <link rel="icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Grandiflora+One&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
+<script>
+if (window.Capacitor) document.querySelector('meta[name=viewport]').content += ',maximum-scale=1,user-scalable=no';
+</script>
 <style>
 :root{
   --ground:#12315F;
@@ -19,7 +22,8 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--ground);color:var(--paper);font:400 16px/1.7 var(--body);word-break:keep-all;overflow-wrap:anywhere}
+html{height:100%;overflow:hidden}
+body{margin:0;position:fixed;inset:0;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;background:var(--ground);color:var(--paper);font:400 16px/1.7 var(--body);word-break:keep-all;overflow-wrap:anywhere}
 main{max-width:680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:calc(20px + env(safe-area-inset-top,0px)) calc(48px + env(safe-area-inset-bottom,0px))}
 a{color:var(--paper);text-underline-offset:3px}
 .back{display:inline-block;min-height:32px;color:var(--mist)}
@@ -68,7 +72,6 @@ th{font-weight:400;color:var(--mist)}
       <tr><td><a href="https://openai.com/policies/privacy-policy/" rel="noopener">OpenAI</a> (미국)</td><td>촬영한 사진</td><td>꽃 감정</td><td>최대 30일. 모델 학습에 쓰이지 않음</td></tr>
       <tr><td><a href="https://supabase.com/privacy" rel="noopener">Supabase</a> (미국 회사, 데이터는 서울 지역 서버에 저장)</td><td>게스트 식별자, 게임 기록, 등록한 사진, 접속 기록</td><td>데이터 저장과 서버 운영</td><td>1번의 기간</td></tr>
       <tr><td><a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener">GitHub</a> (미국)</td><td>접속 기록</td><td>웹사이트 호스팅</td><td>업체 기준</td></tr>
-      <tr><td><a href="https://policies.google.com/privacy" rel="noopener">Google</a> (미국)</td><td>접속 기록</td><td>글꼴 제공</td><td>업체 기준</td></tr>
     </tbody>
   </table></div>
   <p>사진 전송을 원하지 않으면 촬영 기능을 쓰지 않으면 됩니다. 이 경우 꽃 등록과 감정은 이용할 수 없습니다.</p>

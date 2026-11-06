@@ -12,7 +12,17 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500&family=Gowun+Dodum&family=Grandiflora+One&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
+<script>
+(function () {
+  var root = document.documentElement;
+  var app = !!window.Capacitor || navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  if (!app) return;
+  root.classList.add('app');
+  var meta = document.querySelector('meta[name=viewport]');
+  meta.content += ',maximum-scale=1,user-scalable=no';
+})();
+</script>
 <style>
 /* Layout: a single thumb-reach column of cyanotype plates over Prussian blue, with a camera dock at the bottom.
    The interface stays monochrome on purpose: the only colour on screen comes from photos the player took. */
@@ -35,11 +45,13 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{-webkit-text-size-adjust:100%}
 img{max-width:100%}
-body{margin:0;background-color:var(--ground);background-image:var(--grain,none);color:var(--paper);font:400 15px/1.6 var(--body);word-break:keep-all;overflow-wrap:anywhere;-webkit-tap-highlight-color:transparent}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ground)}
+html,body{height:100%}
+body{margin:0;position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:none;touch-action:manipulation;background-color:var(--ground);background-image:var(--grain,none);color:var(--paper);font:400 15px/1.6 var(--body);word-break:keep-all;overflow-wrap:anywhere;-webkit-tap-highlight-color:transparent}
+.app body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.app input{-webkit-user-select:text;user-select:text}
+img,svg{-webkit-user-drag:none}
 button,input,select{font:inherit;color:inherit}
 button{background:none;border:0;padding:0;cursor:pointer}
 :focus-visible{outline:2px solid var(--paper);outline-offset:2px}
@@ -49,7 +61,7 @@ ul{list-style:none}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 /* 상단 */
-.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ground);border-bottom:1px solid var(--hair)}
+.top{flex:none;position:relative;z-index:5;padding-top:env(safe-area-inset-top,0px);background:var(--ground);border-bottom:1px solid var(--hair)}
 .top-in{max-width:520px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:10px 9px}
 .mark{font:400 31px/1.1 var(--display);letter-spacing:.01em;-webkit-text-stroke:.5px currentColor}
 .book-title,.ename,.r-name,.kkot{-webkit-text-stroke:.4px currentColor}
@@ -60,11 +72,17 @@ ul{list-style:none}
 .xp{height:2px;background:var(--hair)}
 .xp i{display:block;height:100%;background:var(--paper);transition:width .5s ease}
 
-.shell{max-width:520px;margin:0 auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:18px 128px;display:flex;flex-direction:column;gap:30px}
+.shell{flex:1 1 auto;min-height:0;width:100%;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:18px 44px;display:flex;flex-direction:column;align-items:center;gap:30px}
+.shell>*{flex:none;width:100%;max-width:488px}
+.view-in{animation:viewIn .18s ease-out}
+@keyframes viewIn{from{opacity:.35;transform:translateY(6px)}}
+.plot,.slot,.mini,.pick,.rg,.chip,.tab,.btn,.x,.linkish{transition:opacity .12s,transform .12s}
+.plot:active,.slot:active,.mini:active,.pick:active,.rg:active,.chip:active,.tab:active,.x:active,.linkish:active{opacity:.55}
+.btn:active{opacity:.85;transform:scale(.98)}
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px}
 .sec-head h2{font:400 18px/1.3 var(--body)}
 .sec-head span{font-size:13px;color:var(--mist)}
-.lead{font-size:15px;color:var(--mist);max-width:36em}
+.lead{font-size:15px;color:var(--mist)}
 
 /* 화단 */
 .plate{border-block:1px solid var(--faint);padding-block:6px 10px}
@@ -155,7 +173,7 @@ img.broken{opacity:0}
 .foot a{min-height:32px;display:inline-flex;align-items:center}
 
 /* 하단 도크 */
-.dock{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--ground-deep);border-top:1px solid var(--faint);padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-bottom:env(safe-area-inset-bottom,0px)}
+.dock{position:relative;flex:none;z-index:6;background:var(--ground-deep);border-top:1px solid var(--faint);padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-bottom:env(safe-area-inset-bottom,0px)}
 .dock-in{max-width:488px;margin:0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) 92px repeat(2,minmax(0,1fr));height:62px;align-items:center}
 .tab{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:12px;line-height:1.2;color:var(--mist);padding-block:6px}
 .tab svg{width:22px;height:22px}
@@ -165,9 +183,15 @@ img.broken{opacity:0}
 .shutter svg{width:26px;height:26px}
 
 /* 시트 */
-.scrim{position:fixed;inset:0;z-index:11;background:var(--scrim)}
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:12;max-width:520px;margin:0 auto;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--ground-deep);border-top:1px solid var(--faint);padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:14px calc(22px + env(safe-area-inset-bottom,0px));animation:rise .22s ease-out}
-@keyframes rise{from{transform:translateY(24px);opacity:.4}}
+.scrim{position:fixed;inset:0;z-index:11;background:var(--scrim);animation:fadeIn .18s ease-out}
+.scrim.out{opacity:0;transition:opacity .17s ease-in}
+@keyframes fadeIn{from{opacity:0}}
+.sheet.out{transform:translateY(100%);transition:transform .17s ease-in}
+.grip{width:38px;height:4px;border-radius:2px;background:var(--faint);margin:-4px auto 10px}
+.grip,.sheet-bar{touch-action:none}
+.sheet-bar .x{touch-action:manipulation}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:12;max-width:520px;margin:0 auto;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--ground-deep);border-top:1px solid var(--faint);border-radius:16px 16px 0 0;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:14px calc(22px + env(safe-area-inset-bottom,0px));animation:rise .24s cubic-bezier(.2,.8,.2,1);transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{transform:translateY(100%)}}
 .sheet-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;min-height:32px}
 .sheet-bar h3{font:400 18px/1.3 var(--body)}
 .x{width:44px;height:32px;margin-right:-8px;font-size:14px;color:var(--mist);text-align:right;padding-right:8px;flex:none}
@@ -217,6 +241,7 @@ img.broken{opacity:0}
 .logs .num{font-size:12px;line-height:22px;color:var(--mist)}
 
 /* 촬영 */
+.cap.kb{padding-bottom:360px}
 .cap{position:fixed;inset:0;z-index:20;background:var(--ground-deep);overflow-y:auto;overscroll-behavior:contain;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:calc(14px + env(safe-area-inset-top,0px)) calc(24px + env(safe-area-inset-bottom,0px))}
 .cap-in{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
 .print{position:relative;aspect-ratio:1;max-height:50dvh;width:100%;margin-inline:auto;background:var(--paper);padding:6px;overflow:hidden}
@@ -240,7 +265,7 @@ img.broken{opacity:0}
 .toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:30;width:max-content;max-width:calc(100vw - 32px);transform:translateX(-50%);background:var(--paper);color:var(--ground-deep);padding:9px 14px;font-size:14px;line-height:1.4;text-align:center;box-shadow:0 6px 22px rgba(4,12,28,.45)}
 
 @media (prefers-reduced-motion:reduce){
-  .sway,.scan,.sheet{animation:none}
+  .sway,.scan,.sheet,.scrim,.view-in{animation:none}
   .print.lit #devColor,.xp i{transition:none}
 }
 </style>
@@ -899,23 +924,63 @@ function renderBook(){
   }).join(''):`<p class="empty-note">${bookFilter==='extra'?'도감 목록에 없는 꽃을 찍으면 여기에 모여요.':'아직 모은 꽃이 없어요. 촬영 버튼을 눌러 첫 꽃을 찍어 보세요.'}</p>`;
 }
 function renderAll(){ noteSeen(); renderTop(); renderGarden(); renderMonth(); renderBook(); renderMap(); renderSync(); }
+const tabScroll={};
 function setTab(t){
+  const cur=$('#'+tab), next=$('#'+t);
+  if(t===tab){ cur.scrollTo({top:0,behavior:'smooth'}); return; }
+  tabScroll[tab]=cur.scrollTop;
   tab=t;
   for(const id of ['garden','map','book','today']) $('#'+id).hidden=t!==id;
+  next.scrollTop=tabScroll[t]||0;
+  next.classList.remove('view-in'); void next.offsetWidth; next.classList.add('view-in');
   document.querySelectorAll('.tab').forEach(b=>{ if(b.dataset.tab===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
-  window.scrollTo(0,0);
 }
-let toastTimer=0;
+let toastTimer=0, closeTimer=0;
+function haptic(kind){
+  try{
+    const H=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Haptics;
+    if(!H) return;
+    const run=kind==='success'?H.notification({type:'SUCCESS'}):H.impact({style:kind==='medium'?'MEDIUM':'LIGHT'});
+    if(run&&run.catch) run.catch(()=>{});
+  }catch(e){}
+}
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>{t.hidden=true;},3200); }
 
 /* ---------- 시트 ---------- */
 function openSheet(title,html){
   const el=$('#sheet');
-  el.innerHTML=`<div class="sheet-bar"><h3>${esc(title)}</h3><button class="x" data-act="closeSheet">닫기</button></div><div class="stack">${html}</div>`;
+  clearTimeout(closeTimer); el.classList.remove('out'); $('#scrim').classList.remove('out');
+  el.innerHTML=`<div class="grip" aria-hidden="true"></div><div class="sheet-bar"><h3>${esc(title)}</h3><button class="x" data-act="closeSheet">닫기</button></div><div class="stack">${html}</div>`;
   el.hidden=false; $('#scrim').hidden=false; el.scrollTop=0;
   el.querySelector('.x').focus({preventScroll:true});
 }
-function closeSheet(){ $('#sheet').hidden=true; $('#scrim').hidden=true; }
+function closeSheet(){
+  const el=$('#sheet'), sc=$('#scrim');
+  if(el.hidden) return;
+  el.classList.add('out'); sc.classList.add('out');
+  clearTimeout(closeTimer);
+  closeTimer=setTimeout(()=>{ el.hidden=true; sc.hidden=true; el.classList.remove('out'); sc.classList.remove('out'); },170);
+}
+function bindSheetSwipe(){
+  const el=$('#sheet');
+  let start=null, moved=0, at=0;
+  el.addEventListener('touchstart',e=>{
+    if(!e.target.closest('.grip,.sheet-bar')||e.target.closest('button')) return;
+    start=e.touches[0].clientY; moved=0; at=Date.now(); el.style.transition='none';
+  },{passive:true});
+  el.addEventListener('touchmove',e=>{
+    if(start===null) return;
+    moved=Math.max(0,e.touches[0].clientY-start);
+    el.style.transform=`translateY(${moved}px)`;
+  },{passive:true});
+  el.addEventListener('touchend',()=>{
+    if(start===null) return;
+    const flick=moved>40&&Date.now()-at<260;
+    el.style.transition=''; el.style.transform='';
+    start=null;
+    if(moved>100||flick) closeSheet();
+  });
+}
 function plantSheet(i){
   const p=s.plots[i]; if(!p) return;
   const now=Date.now(); settleDew(s,now); renderTop();
@@ -1206,7 +1271,7 @@ async function startCapture(file){
     const ans=await identify(me.blob,me.ctl.signal);
     if(job!==me) return;
     const r=readAnswer(ans);
-    if(r.verdict==='real'){ me.res=r; $('#print').classList.add('lit'); resultUI(); }
+    if(r.verdict==='real'){ me.res=r; $('#print').classList.add('lit'); haptic('success'); resultUI(); }
     else rejectUI(r);
   }catch(e){
     if(job!==me||(e&&e.code==='cancelled')) return;
@@ -1296,17 +1361,17 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]'); if(!b) return;
   const a=b.dataset.act, i=b.dataset.i==null?null:+b.dataset.i, key=b.dataset.key;
   switch(a){
-    case 'tab': setTab(b.dataset.tab); break;
-    case 'shoot': closeSheet(); askShoot(); break;
+    case 'tab': haptic('light'); setTab(b.dataset.tab); break;
+    case 'shoot': haptic('medium'); closeSheet(); askShoot(); break;
     case 'shootIn': s.region=b.dataset.r; saveLocal(); closeSheet(); renderMonth(); askShoot(); break;
     case 'agree': s.agreed=Date.now(); saveLocal(); closeSheet(); cam.click(); break;
     case 'wipeAsk': openSheet('내 기록을 지울까요',`<p>도감, 정원, 지도 기록과 저장한 사진이 모두 지워지고 처음부터 시작해요. 되돌릴 수 없어요.</p><button class="btn pri" data-act="wipe">모두 지우기</button><button class="btn" data-act="closeSheet">취소</button>`); break;
     case 'wipe': wipeAll(b); break;
     case 'region': regionSheet(b.dataset.r); break;
     case 'plot': if(s.plots[i]) plantSheet(i); else seedSheet(i); break;
-    case 'plant': doPlant(i,key); break;
-    case 'water': doWater(i); break;
-    case 'harvest': doHarvest(i); break;
+    case 'plant': haptic('light'); doPlant(i,key); break;
+    case 'water': haptic('light'); doWater(i); break;
+    case 'harvest': haptic('success'); doHarvest(i); break;
     case 'entry': entrySheet(key); break;
     case 'entryPhoto': entrySheet(key,+b.dataset.idx); break;
     case 'filter': bookFilter=b.dataset.f; renderBook(); break;
@@ -1327,6 +1392,15 @@ document.addEventListener('change',e=>{
   ph.region=sel.value; s.region=sel.value;
   commit(); entrySheet(key,idx);
 });
+document.addEventListener('touchstart',()=>{},{passive:true});
+document.addEventListener('gesturestart',e=>{ if(document.documentElement.classList.contains('app')) e.preventDefault(); });
+$('#cap').addEventListener('focusin',e=>{
+  if(!e.target.matches('input')) return;
+  $('#cap').classList.add('kb');
+  setTimeout(()=>e.target.scrollIntoView({block:'center',behavior:'smooth'}),260);
+});
+$('#cap').addEventListener('focusout',()=>$('#cap').classList.remove('kb'));
+bindSheetSwipe();
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(!$('#sheet').hidden) closeSheet(); else if(!$('#cap').hidden) capClose(); } });
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&s){ settleDew(s,Date.now()); renderTop(); renderGarden(); } });
 setInterval(()=>{ if(s&&!document.hidden){ settleDew(s,Date.now()); renderTop(); renderGarden(); } },30000);
