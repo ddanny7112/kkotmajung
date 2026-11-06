@@ -1,5 +1,5 @@
 /* 꽃보라 도감 그림
-   84종을 압화 표본처럼 그립니다. 줄기와 잎은 선으로, 꽃잎은 플레이어의 사진 색으로 칠합니다.
+   88종을 압화 표본처럼 그립니다. 줄기와 잎은 선으로, 꽃잎은 플레이어의 사진 색으로 칠합니다.
    화면 좌표는 가로 120, 땅 높이 142를 기준으로 합니다. */
 window.FlowerArt = (function () {
   'use strict';
@@ -585,6 +585,10 @@ window.FlowerArt = (function () {
     섬기린초: { s: 'herb', y: 54, r: 24, l: 'tooth', pairs: 4, ll: 22, h: 'umbel', n: 9, fan: 150, flat: .6, sub: 3, fs: .15, fp: 5 },
     울릉국화: { s: 'shrub', k: 3, r: 18, y: 54, wide: 54, l: 'feather', pairs: 3, ll: 22, h: 'radial', n: 18, tip: 'round', w: .1, disc: .24 },
     섬바디: { s: 'herb', y: 44, r: 29, tall: 1, l: 'pinnate', pairs: 2, ll: 34, h: 'umbel', n: 15, fan: 164, flat: .5, sub: 5, fs: .09, fp: 5 },
+    남산제비꽃: { s: 'scape', y: 66, r: 20, l: 'feather', lc: 5, ls: 40, ll: 34, h: 'viola' },
+    꽃창포: { s: 'scape', y: 52, r: 26, l: 'sword', lc: 5, ls: 20, ll: 72, h: 'iris', signal: 1 },
+    갯개미취: { s: 'shrub', k: 4, r: 14, y: 52, wide: 62, l: 'lance', pairs: 3, ll: 22, h: 'radial', n: 14, tip: 'strap', w: .1, disc: .3 },
+    병꽃나무: { s: 'branch', k: 7, r: 14, l: 'oval', ll: 20, h: 'funnel', fw: .5, fl: 1.35, st: 0 },
   };
 
   return {
