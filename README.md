@@ -10,5 +10,6 @@
 - `supabase/functions/identify/index.ts`: 사진 감정 서버 함수
 - `privacy.html`: 개인정보처리방침
 - `sw.js`, `manifest.webmanifest`: 홈 화면 앱 설정
+- `app/`: 아이폰 앱 프로젝트 (Capacitor). 게임을 고친 뒤 `app` 폴더에서 `npm run sync`를 실행합니다.
 
 지역 경계는 통계청 센서스용 행정구역경계(2018)를 [southkorea-maps](https://github.com/southkorea/southkorea-maps)에서 받아 간략화했습니다.

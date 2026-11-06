@@ -1271,7 +1271,7 @@ async function wipeAll(btn){
   location.reload();
 }
 function renderInstall(){
-  const installed=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+  const installed=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true||!!window.Capacitor;
   $('#installBox').hidden=installed;
   if(installed) return;
   const apple=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
@@ -1347,7 +1347,7 @@ function start(){
   renderInstall();
   loadPhotoUrls();
   connect();
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  if('serviceWorker' in navigator&&location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 start();
 </script>
