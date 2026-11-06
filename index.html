@@ -1076,8 +1076,14 @@ function pickColors(data,W,H){
   let [h,sa,v]=rgbToHsv(...chosen);
   const hue=hueName(h,sa,v);
   v=Math.max(v,.66);
-  const coreRGB=mean(core), [ch,cs,cv]=rgbToHsv(...coreRGB);
-  return {color:hsvToHex(h,sa,v),core:hsvToHex(ch,cs,Math.max(cv,.6)),hue};
+  /* 꽃 중심색: 꽃잎과 뚜렷이 다른 두 번째 색을 찾고, 없으면 사진 가운데 색을 씁니다. */
+  const first=bins.indexOf(best), petalIsLight=chosen!==undefined&&!(best.w>=light.w*.7&&best.w>0);
+  const green=i=>i>=5&&i<=10, apart=(i,j)=>{ const d=Math.abs(i-j); return Math.min(d,24-d)>=2; };
+  let accent=null;
+  bins.forEach((c,i)=>{ if(!green(i)&&apart(i,first)&&c.w>(accent?accent.w:0)) accent=c; });
+  const coreRGB=petalIsLight&&best.w&&!green(first)?mean(best):accent&&accent.w>best.w*.05?mean(accent):mean(core);
+  const [ch,cs,cv]=rgbToHsv(...coreRGB);
+  return {color:hsvToHex(h,sa,v),core:hsvToHex(ch,cs,Math.max(cv,.72)),hue};
 }
 function extractColors(src){
   const W=64,H=64,c=document.createElement('canvas');
