@@ -120,10 +120,14 @@ img.broken{opacity:0}
 .slot{display:flex;flex-direction:column;text-align:left;min-width:0;content-visibility:auto;contain-intrinsic-size:auto 150px}
 .slot-art{position:relative;display:block;aspect-ratio:1;background:var(--ground-deep);color:var(--paper);overflow:hidden}
 .slot:not(.got) .slot-art svg{opacity:.62}
-.slot.got .slot-art{background:var(--paper);box-shadow:inset 0 0 0 3px var(--paper)}
-.slot.got .slot-art img{inset:3px;width:calc(100% - 6px);height:calc(100% - 6px)}
-.slot.got .slot-art svg{color:var(--ground)}
-.seal{position:absolute;right:7px;bottom:7px;width:26px;height:26px;border-radius:50%;background:var(--ground-deep);color:var(--paper);font-size:11px;line-height:26px;text-align:center}
+.slot.got .slot-art{box-shadow:inset 0 0 0 1px var(--paper)}
+.slot .slot-art img.snap{inset:auto 5px 5px auto;width:32%;height:32%;border:2px solid var(--paper)}
+.qm{position:absolute;inset:0;display:grid;place-items:center;font:400 46px/1 var(--display);color:var(--mist);opacity:.85}
+.pick-art{position:relative}
+.pick-art .qm{font-size:26px}
+.ent-ghost.q{position:relative;height:200px}
+.ent-ghost.q .qm{font-size:90px}
+.seal{position:absolute;left:5px;top:5px;width:26px;height:26px;border-radius:50%;background:var(--ground-deep);color:var(--paper);font-size:11px;line-height:26px;text-align:center}
 .slot-no{font:400 11px/1.4 var(--mono);color:var(--mist);margin-top:5px}
 .slot-name{font-size:14px;line-height:1.3}
 .slot:not(.got) .slot-name{color:var(--mist)}
@@ -298,6 +302,7 @@ img.broken{opacity:0}
     <div class="book-sum"><span>채집 <b id="bkGot">0</b> / <span class="num" id="bkTotal">0</span></span><span>직접 키운 꽃 <b id="bkBloom">0</b></span><span>도감 밖 <b id="bkExtra">0</b></span></div>
     <div class="meter"><i id="bkMeter" style="width:0"></i></div>
     <div id="chips" class="chips"></div>
+    <p class="note" style="margin-top:10px">물음표 꽃은 피는 달이 되면 투명한 그림으로 나타나고, 직접 찍으면 그 사진의 색으로 물들어요.</p>
     <div id="bookGrid" class="grid"></div>
   </section>
 </main>
@@ -621,7 +626,7 @@ function shade(hex,amt){
 }
 function paints(sp){
   if(hexOk(sp.color)){
-    const line='stroke="rgba(255,255,255,.55)" stroke-width=".6"';
+    const line='fill-opacity=".78" stroke="#F0F4F8" stroke-opacity=".75" stroke-width=".7"';
     const coreHex=hexOk(sp.core)?sp.core:shade(sp.color,.45);
     return {a:`fill="${sp.color}" ${line}`,b:`fill="${shade(sp.color,-.14)}" ${line}`,core:`fill="${coreHex}"`,c:`fill="${coreHex}"`,ink:coreHex,tip:sp.color};
   }
@@ -698,6 +703,17 @@ function plantSVG(sp,stage,seed){
   return `<svg class="pl" viewBox="0 12 120 134" aria-hidden="true"><path d="M6 ${G}H114" stroke="currentColor" stroke-opacity=".38" stroke-width=".8"/><g class="sway" style="animation-delay:-${delay}s">${g}</g></svg>`;
 }
 const iconCache=new Map();
+function noteSeen(){
+  const m=new Date().getMonth();
+  if(!s.seen) s.seen={};
+  for(const c of CATALOG) if(c.months[m]) s.seen[c.key]=1;
+}
+function known(c){ return !!(s.entries[c.key]||(s.seen&&s.seen[c.key])); }
+function colorIcon(e){
+  const body=window.FlowerArt&&FlowerArt.has(e.name)?FlowerArt.specimen(e,paints(e),e.name):bloomHead(e,60,70,40,e.key);
+  return `<svg viewBox="-6 14 132 132" aria-hidden="true"><path d="M6 142H114" stroke="currentColor" stroke-opacity=".38" stroke-width=".8"/>${body}</svg>`;
+}
+const QMARK='<span class="qm" aria-hidden="true">?</span>';
 function flowerIcon(sp){
   if(window.FlowerArt&&FlowerArt.has(sp.name)){
     if(!iconCache.has(sp.name)) iconCache.set(sp.name,`<svg viewBox="-6 14 132 132" aria-hidden="true"><path d="M6 142H114" stroke="currentColor" stroke-opacity=".38" stroke-width=".8"/>${FlowerArt.specimen({name:sp.name},paints({}),sp.name)}</svg>`);
@@ -777,8 +793,8 @@ function renderMonth(){
   $('#monthTitle').textContent=home?`${m+1}월, ${home.name}에서 만날 수 있는 꽃`:`${m+1}월에 만날 수 있는 꽃`;
   const list=CATALOG.filter(c=>c.months[m]&&(!home||!c.regions.length||c.regions.includes(s.region))).sort((a,b)=>(!!s.entries[a.key]-!!s.entries[b.key])||(a.months.filter(Boolean).length===12)-(b.months.filter(Boolean).length===12));
   $('#monthStrip').innerHTML=list.map(c=>{
-    const e=s.entries[c.key], ph=e&&e.photos[0];
-    return `<button class="mini" data-act="entry" data-key="${c.key}"><span class="mini-art">${flowerIcon(c)}${ph?`<img src="${esc(photoSrc(ph.pid))}" alt="" loading="lazy">`:''}</span><b>${esc(c.name)}</b><small>${esc(c.hint.split(',')[0])}</small></button>`;
+    const e=s.entries[c.key];
+    return `<button class="mini" data-act="entry" data-key="${c.key}"><span class="mini-art">${e?colorIcon(e):flowerIcon(c)}</span><b>${esc(c.name)}</b><small>${esc(c.hint.split(',')[0])}</small></button>`;
   }).join('');
 }
 function renderSync(){
@@ -791,9 +807,11 @@ function bookList(){
   if(bookFilter==='extra') return extra.map((e,i)=>({key:e.key,name:e.name,no:'+'+String(i+1).padStart(2,'0'),e,sp:e}));
   const items=CATALOG.map(c=>({key:c.key,name:c.name,no:pad3(c.no),e:s.entries[c.key],sp:c,c}));
   if(bookFilter==='month') return items.filter(x=>x.c.months[m]);
-  if(bookFilter==='regional') return items.filter(x=>x.c.regions.length);
+  const stage=x=>x.e?0:known(x.c)?1:2;
+  const ordered=list=>list.slice().sort((a,b)=>stage(a)-stage(b)||a.c.no-b.c.no);
+  if(bookFilter==='regional') return ordered(items.filter(x=>x.c.regions.length));
   if(bookFilter==='got') return items.filter(x=>x.e);
-  return items;
+  return ordered(items);
 }
 /* 꽃 지도 */
 function regionData(){
@@ -852,8 +870,8 @@ function regionSheet(id){
   const list=regionalOf(id).sort((a,b)=>(b.months[m]-a.months[m])||(d.species.has(a.key)-d.species.has(b.key))||a.no-b.no);
   const got=list.filter(c=>d.species.has(c.key)).length;
   const rows=list.map(c=>{
-    const color=d.species.get(c.key), sp=color?{...c,color}:c;
-    return `<button class="pick" data-act="entry" data-key="${c.key}"><span class="pick-art">${flowerMini(sp)}</span><span><b>${esc(c.name)}</b><small>${esc(c.mtxt)} · ${esc(c.hint)}</small></span>${c.months[m]?'<span class="nowtag">지금 피는 때</span>':'<span></span>'}</button>`;
+    const color=d.species.get(c.key), sp=color?{...c,color}:c, hidden=!known(c);
+    return `<button class="pick" data-act="entry" data-key="${c.key}"><span class="pick-art">${hidden?QMARK:flowerMini(sp)}</span><span><b>${hidden?'???':esc(c.name)}</b><small>${esc(c.mtxt)} · ${esc(c.hint)}</small></span>${c.months[m]?'<span class="nowtag">지금 피는 때</span>':'<span></span>'}</button>`;
   }).join('');
   const shots=d.photos.slice(-12).reverse();
   openSheet(R.name,`<div>${R.sub===R.name?'':`<p class="meta">${esc(R.sub)}</p>`}<p>${esc(R.note)}</p></div>
@@ -873,11 +891,12 @@ function renderBook(){
   $('#chips').innerHTML=chips.map(([k,l])=>`<button class="chip" data-act="filter" data-f="${k}" aria-pressed="${bookFilter===k}">${l}</button>`).join('');
   const list=bookList();
   $('#bookGrid').innerHTML=list.length?list.map(x=>{
-    const ph=x.e&&x.e.photos[x.e.photos.length-1];
-    return `<button class="slot${x.e?' got':''}" data-act="entry" data-key="${esc(x.key)}"><span class="slot-art">${flowerIcon(x.sp)}${ph?`<img src="${esc(photoSrc(ph.pid))}" alt="${esc(x.name)} 사진" loading="lazy">`:''}${x.e&&x.e.bloomed?'<i class="seal" title="직접 키움">개화</i>':''}</span><span class="slot-no">${x.no}</span><span class="slot-name">${esc(x.name)}</span></button>`;
+    const ph=x.e&&x.e.photos[x.e.photos.length-1], hidden=x.c&&!known(x.c);
+    const art=x.e?colorIcon(x.e):hidden?QMARK:flowerIcon(x.sp);
+    return `<button class="slot${x.e?' got':''}${hidden?' q':''}" data-act="entry" data-key="${esc(x.key)}" aria-label="${hidden?`${x.no}번 아직 모르는 꽃`:esc(x.name)}"><span class="slot-art">${art}${ph?`<img class="snap" src="${esc(photoSrc(ph.pid))}" alt="" loading="lazy">`:''}${x.e&&x.e.bloomed?'<i class="seal" title="직접 키움">개화</i>':''}</span><span class="slot-no">${x.no}</span><span class="slot-name">${hidden?'???':esc(x.name)}</span></button>`;
   }).join(''):`<p class="empty-note">${bookFilter==='extra'?'도감 목록에 없는 꽃을 찍으면 여기에 모여요.':'아직 모은 꽃이 없어요. 촬영 버튼을 눌러 첫 꽃을 찍어 보세요.'}</p>`;
 }
-function renderAll(){ renderTop(); renderGarden(); renderMonth(); renderBook(); renderMap(); renderSync(); }
+function renderAll(){ noteSeen(); renderTop(); renderGarden(); renderMonth(); renderBook(); renderMap(); renderSync(); }
 function setTab(t){
   tab=t;
   for(const id of ['garden','map','book','today']) $('#'+id).hidden=t!==id;
@@ -927,6 +946,13 @@ function calHTML(c){
 }
 function entrySheet(key,photoIdx){
   const e=s.entries[key], c=byKey[key];
+  if(!e&&!known(c)){
+    openSheet(`No.${pad3(c.no)}`,`<div class="ent-ghost q">${QMARK}</div>
+      <div><h3 class="ename">???</h3><p class="meta">아직 모습을 알 수 없는 꽃이에요. 피는 달이 되면 도감에 나타나요.</p></div>
+      <div class="say"><h4>피는 달</h4>${calHTML(c)}<p class="meta" style="margin-top:6px">지역과 해마다 조금씩 달라요.</p></div>
+      <div class="say"><h4>찾아볼 곳</h4><p>${esc(c.hint)}</p>${regionLine(c)}</div>`);
+    return;
+  }
   if(!e){
     openSheet(`No.${pad3(c.no)}`,`<div class="ent-ghost">${flowerIcon(c)}</div>
       <div><h3 class="ename">${esc(c.name)}</h3><p class="esci">${esc(c.sci)}</p></div>
