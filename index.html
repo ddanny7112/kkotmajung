@@ -241,8 +241,8 @@ img.broken{opacity:0}
 .logs .num{font-size:12px;line-height:22px;color:var(--mist)}
 
 /* 촬영 */
-.cap.kb{padding-bottom:360px}
-.cap{position:fixed;inset:0;z-index:20;background:var(--ground-deep);overflow-y:auto;overscroll-behavior:contain;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:calc(14px + env(safe-area-inset-top,0px)) calc(24px + env(safe-area-inset-bottom,0px))}
+.cap{position:fixed;inset:0;z-index:20;background:var(--ground-deep);overflow-y:auto;overscroll-behavior:contain;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:calc(14px + env(safe-area-inset-top,0px)) calc(24px + max(env(safe-area-inset-bottom,0px),var(--kb,0px)));scroll-padding-top:calc(12px + env(safe-area-inset-top,0px));scroll-padding-bottom:calc(92px + var(--kb,0px))}
+.cap::before{content:"";position:fixed;inset:0 0 auto;z-index:1;height:env(safe-area-inset-top,0px);background:var(--ground-deep)}
 .cap-in{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
 .print{position:relative;aspect-ratio:1;max-height:50dvh;width:100%;margin-inline:auto;background:var(--paper);padding:6px;overflow:hidden}
 .print canvas{position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);object-fit:cover;display:block}
@@ -262,7 +262,7 @@ img.broken{opacity:0}
 .wait{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
 .wait b{font:400 18px/1.3 var(--body)}
 
-.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:30;width:max-content;max-width:calc(100vw - 32px);transform:translateX(-50%);background:var(--paper);color:var(--ground-deep);padding:9px 14px;font-size:14px;line-height:1.4;text-align:center;box-shadow:0 6px 22px rgba(4,12,28,.45)}
+.toast{position:fixed;left:50%;bottom:calc(92px + max(env(safe-area-inset-bottom,0px),var(--kb,0px)));z-index:30;width:max-content;max-width:calc(100vw - 32px);transform:translateX(-50%);background:var(--paper);color:var(--ground-deep);padding:9px 14px;font-size:14px;line-height:1.4;text-align:center;box-shadow:0 6px 22px rgba(4,12,28,.45)}
 
 @media (prefers-reduced-motion:reduce){
   .sway,.scan,.sheet,.scrim,.view-in{animation:none}
@@ -1208,9 +1208,9 @@ function resultUI(){
   $('#capBody').innerHTML=`<p class="r-tag">${r.no?`No.${pad3(r.no)}`:'도감 밖의 꽃'} · ${isNew?'처음 만난 꽃':'다시 만난 꽃'} · <span class="num">${stars(r.rarity)}</span></p>
     <div><h2 class="r-name">${esc(r.name)}</h2>${r.sci?`<p class="r-sci">${esc(r.sci)}</p>`:''}</div>
     ${r.note?`<div class="r-grade"><span class="num" aria-label="사진 점수 ${r.grade}점">${stars(r.grade,3)}</span><span>${esc(r.note)}</span></div>`:''}
-    <label class="fld" for="fixName">꽃 이름 (틀렸다면 고쳐 주세요)<input id="fixName" list="nameList" maxlength="30" value="${esc(r.name)}" autocomplete="off"></label>
+    <label class="fld" for="fixName">꽃 이름 (틀렸다면 고쳐 주세요)<input id="fixName" list="nameList" maxlength="30" value="${esc(r.name)}" autocomplete="off" enterkeyhint="done"></label>
     ${regionField()}
-    <label class="fld" for="place">자세한 장소 (선택)<input id="place" maxlength="40" placeholder="예: 덕수궁 돌담길" autocomplete="off"></label>
+    <label class="fld" for="place">자세한 장소 (선택)<input id="place" maxlength="40" placeholder="예: 덕수궁 돌담길" autocomplete="off" enterkeyhint="done"></label>
     <button class="btn pri" data-act="register">도감에 등록</button>
     <p class="meta">등록하면 씨앗 ${seeds}개와 이슬 2방울을 받아요. 처음 가는 지역이면 이슬 3방울을 더 받아요.</p>
     <button class="linkish" data-act="capClose">등록하지 않고 닫기</button>`;
@@ -1219,9 +1219,9 @@ function manualUI(msg){
   const r=job.res={verified:false,grade:1,note:'',verdict:'real',key:'',name:'',rarity:1,form:'round',petals:5,sci:'',family:'',kkotmal:'',fact:'',no:null};
   $('#print').className='print lit';
   $('#capBody').innerHTML=`<h2 class="r-name">이름을 직접 적어 주세요</h2><p class="meta">${esc(msg)}</p>
-    <label class="fld" for="fixName">꽃 이름<input id="fixName" list="nameList" maxlength="30" value="${esc(r.name)}" autocomplete="off"></label>
+    <label class="fld" for="fixName">꽃 이름<input id="fixName" list="nameList" maxlength="30" value="${esc(r.name)}" autocomplete="off" enterkeyhint="done"></label>
     ${regionField()}
-    <label class="fld" for="place">자세한 장소 (선택)<input id="place" maxlength="40" placeholder="예: 덕수궁 돌담길" autocomplete="off"></label>
+    <label class="fld" for="place">자세한 장소 (선택)<input id="place" maxlength="40" placeholder="예: 덕수궁 돌담길" autocomplete="off" enterkeyhint="done"></label>
     <button class="btn pri" data-act="register">도감에 등록</button>
     <button class="linkish" data-act="capClose">등록하지 않고 닫기</button>`;
 }
@@ -1394,12 +1394,26 @@ document.addEventListener('change',e=>{
 });
 document.addEventListener('touchstart',()=>{},{passive:true});
 document.addEventListener('gesturestart',e=>{ if(document.documentElement.classList.contains('app')) e.preventDefault(); });
-$('#cap').addEventListener('focusin',e=>{
-  if(!e.target.matches('input')) return;
-  $('#cap').classList.add('kb');
-  setTimeout(()=>e.target.scrollIntoView({block:'center',behavior:'smooth'}),260);
+let kbH=0;
+function revealField(){
+  const a=document.activeElement;
+  if(kbH&&a&&a.matches('#cap input')) a.scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+function setKb(h){
+  kbH=h;
+  document.documentElement.style.setProperty('--kb',h+'px');
+  if(h) requestAnimationFrame(revealField);
+}
+window.addEventListener('keyboardWillShow',e=>setKb(e.keyboardHeight||0));
+window.addEventListener('keyboardWillHide',()=>setKb(0));
+$('#cap').addEventListener('focusin',revealField);
+$('#cap').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.isComposing&&e.target.matches('input')){ e.preventDefault(); e.target.blur(); }
 });
-$('#cap').addEventListener('focusout',()=>$('#cap').classList.remove('kb'));
+$('#cap').addEventListener('click',e=>{
+  const a=document.activeElement;
+  if(a&&a.matches('#cap input')&&!e.target.closest('input,select,button,a,label')) a.blur();
+});
 bindSheetSwipe();
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(!$('#sheet').hidden) closeSheet(); else if(!$('#cap').hidden) capClose(); } });
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&s){ settleDew(s,Date.now()); renderTop(); renderGarden(); } });
