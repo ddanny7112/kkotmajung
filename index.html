@@ -530,7 +530,7 @@ function settleDew(st,now){
 }
 const xpFor=l=>50*l*(l-1);
 function levelOf(xp){ let l=1; while(xp>=xpFor(l+1)) l++; return l; }
-const plotsFor=l=>l>=5?12:l>=3?9:6;
+const PLOTS=6;
 
 /* ---------- 게임 상태 ---------- */
 function newPlot(sp,now,grownShare=0){
@@ -540,10 +540,16 @@ function newPlot(sp,now,grownShare=0){
 function newGame(now){
   return {v:1,updatedAt:0,xp:0,water:DEW_MAX,waterAt:now,seeds:{},entries:{},plots:[newPlot(GIFT,now,.34),null,null,null,null,null],daily:null};
 }
+/* 화단은 6칸입니다. 예전 기록에서 6칸을 넘겨 심은 꽃은 사라지지 않게 수확할 때까지 둡니다. */
+function fitPlots(list){
+  const plots=list.length>PLOTS?list.filter(Boolean):list.slice();
+  while(plots.length<PLOTS) plots.push(null);
+  return plots;
+}
 function cleanState(d,now){
   const g=newGame(now);
   const o=Object.assign(g,d||{});
-  o.entries=o.entries||{}; o.seeds=o.seeds||{}; o.plots=Array.isArray(o.plots)?o.plots:g.plots;
+  o.entries=o.entries||{}; o.seeds=o.seeds||{}; o.plots=fitPlots(Array.isArray(o.plots)?o.plots:g.plots);
   return o;
 }
 let s;
@@ -783,11 +789,7 @@ function gainXP(n){
   const before=levelOf(s.xp);
   s.xp+=n;
   const after=levelOf(s.xp);
-  if(after>before){
-    const want=plotsFor(after);
-    while(s.plots.length<want) s.plots.push(null);
-    toast(want>plotsFor(before)?`정원사 ${after}단계. 화단이 ${want}칸으로 넓어졌어요.`:`정원사 ${after}단계가 되었어요.`);
-  }
+  if(after>before) toast(`정원사 ${after}단계가 되었어요.`);
 }
 
 /* ---------- 화면 ---------- */
