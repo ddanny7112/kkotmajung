@@ -76,7 +76,7 @@ ul{list-style:none}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 /* 유리 가장자리에서 갈라지는 빛 */
-.dock-in::after,.shutter::after,.slot.got .slot-art::after,.mini.got .mini-art::after,.plot.bloom::after,.gl-tile::after,.ent-photo::after,.print::after{
+.dock-in::after,.slot.got .slot-art::after,.mini.got .mini-art::after,.plot.bloom::after,.gl-tile::after,.ent-photo::after,.print::after{
   content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;
   background:conic-gradient(transparent 0 4%,var(--r1) 8%,var(--r2) 12.5%,var(--r3) 17%,transparent 21% 54%,var(--r1) 58%,var(--r2) 62.5%,var(--r3) 67%,transparent 71%);
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
@@ -203,8 +203,6 @@ img.broken{opacity:0}
 .tab svg{width:22px;height:22px}
 .tab[aria-current="page"]{color:var(--ink)}
 .shutter{position:relative;justify-self:center;width:78px;height:78px;margin-top:-26px;border-radius:50%;background:radial-gradient(circle at 35% 25%,#FFFFFF 0,#F0F4F8 45%,#C4D2E4 100%);color:var(--on-ink);box-shadow:0 12px 26px rgba(3,10,24,.5),inset 0 0 0 1px rgba(255,255,255,.9),inset 0 -6px 12px rgba(18,49,95,.16);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;line-height:1.2;transition:transform .12s}
-.shutter::after{inset:-1px;padding:2.5px;animation:turn 9s linear infinite}
-@keyframes turn{to{transform:rotate(360deg)}}
 .shutter:active{transform:scale(.93)}
 .shutter svg{width:26px;height:26px}
 
@@ -313,7 +311,7 @@ img.broken{opacity:0}
 @keyframes pop{from{transform:scale(0) rotate(-40deg)}}
 
 @media (prefers-reduced-motion:reduce){
-  .sway,.scan,.sheet,.scrim,.view-in,.shutter::after,.pop .mbi,.stat b.bump{animation:none}
+  .sway,.scan,.sheet,.scrim,.view-in,.pop .mbi,.stat b.bump{animation:none}
   .drop,.ring{display:none}
   .print.lit #devColor,.xp i{transition:none}
 }

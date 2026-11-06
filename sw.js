@@ -1,6 +1,6 @@
 // 앱 화면 파일을 보관해 두어 홈 화면 앱이 빠르게 열리도록 합니다.
 // 사진과 저장 데이터는 여기서 다루지 않습니다.
-const CACHE = 'kkotmajung-v12';
+const CACHE = 'kkotmajung-v13';
 const SHELL = ['./', './index.html', './privacy.html', './config.js', './art.js', './dex.js', './glass.js', './fonts/fonts.css', './vendor/supabase.js', './manifest.webmanifest', './icons/icon-192.png'];
 
 self.addEventListener('install', (event) => {
