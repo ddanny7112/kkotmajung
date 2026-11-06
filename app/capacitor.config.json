@@ -2,11 +2,11 @@
   "appId": "io.github.ddanny7112.kkotmajung",
   "appName": "꽃마중",
   "webDir": "www",
-  "backgroundColor": "#12315F",
+  "backgroundColor": "#E8EBEF",
   "ios": {
     "contentInset": "never",
     "scrollEnabled": false,
-    "backgroundColor": "#12315F"
+    "backgroundColor": "#E8EBEF"
   },
   "plugins": {
     "Keyboard": {
