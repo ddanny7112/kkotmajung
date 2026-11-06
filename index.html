@@ -98,7 +98,9 @@ ul{list-style:none}
 .mini{flex:0 0 104px;scroll-snap-align:start;text-align:left;display:flex;flex-direction:column;gap:2px}
 .mini-art{position:relative;aspect-ratio:1;background:var(--ground-deep);color:var(--paper);overflow:hidden;display:block}
 .mini-art img,.slot-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-.mini-art svg,.slot-art svg{position:absolute;inset:6%;width:88%;height:88%}
+.mini-art svg,.slot-art svg{position:absolute;inset:3%;width:94%;height:94%}
+.ent-plate{display:grid;grid-template-columns:128px minmax(0,1fr);gap:12px;align-items:center;color:var(--paper)}
+.ent-plate svg{width:128px;height:128px;display:block}
 .mini b{font-weight:400;font-size:14px;line-height:1.3;margin-top:4px}
 .mini small{font-size:12px;line-height:1.3;color:var(--mist)}
 img.broken{opacity:0}
@@ -115,7 +117,7 @@ img.broken{opacity:0}
 .chip{padding:6px 12px;border:1px solid var(--faint);border-radius:99px;font-size:13px;line-height:1.3;color:var(--mist)}
 .chip[aria-pressed="true"]{background:var(--paper);border-color:var(--paper);color:var(--ground-deep)}
 .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 10px;margin-top:16px}
-.slot{display:flex;flex-direction:column;text-align:left;min-width:0}
+.slot{display:flex;flex-direction:column;text-align:left;min-width:0;content-visibility:auto;contain-intrinsic-size:auto 150px}
 .slot-art{position:relative;display:block;aspect-ratio:1;background:var(--ground-deep);color:var(--paper);overflow:hidden}
 .slot:not(.got) .slot-art svg{opacity:.62}
 .slot.got .slot-art{background:var(--paper);box-shadow:inset 0 0 0 3px var(--paper)}
@@ -327,6 +329,7 @@ img.broken{opacity:0}
 
 <script src="vendor/supabase.js"></script>
 <script src="config.js"></script>
+<script src="art.js"></script>
 <script>
 'use strict';
 /* ---------- 규칙 ---------- */
@@ -619,10 +622,11 @@ function shade(hex,amt){
 function paints(sp){
   if(hexOk(sp.color)){
     const line='stroke="rgba(255,255,255,.55)" stroke-width=".6"';
-    return {a:`fill="${sp.color}" ${line}`,b:`fill="${shade(sp.color,-.14)}" ${line}`,core:`fill="${hexOk(sp.core)?sp.core:shade(sp.color,.45)}"`,tip:sp.color};
+    const coreHex=hexOk(sp.core)?sp.core:shade(sp.color,.45);
+    return {a:`fill="${sp.color}" ${line}`,b:`fill="${shade(sp.color,-.14)}" ${line}`,core:`fill="${coreHex}"`,c:`fill="${coreHex}"`,ink:coreHex,tip:sp.color};
   }
   const line='stroke="currentColor" stroke-width=".8"';
-  return {a:`fill="currentColor" fill-opacity=".16" ${line}`,b:`fill="currentColor" fill-opacity=".08" ${line}`,core:`fill="currentColor" fill-opacity=".8"`,tip:null};
+  return {a:`fill="currentColor" fill-opacity=".16" ${line}`,b:`fill="currentColor" fill-opacity=".08" ${line}`,core:`fill="currentColor" fill-opacity=".8"`,c:`fill="currentColor" fill-opacity=".8"`,ink:'currentColor',tip:null};
 }
 function petal(x,y,len,wid,rot,attr){
   return `<path transform="translate(${n1(x)} ${n1(y)}) rotate(${n1(rot)})" d="M0 0C${n1(wid)} ${n1(-len*.3)} ${n1(wid)} ${n1(-len*.85)} 0 ${n1(-len)}C${n1(-wid)} ${n1(-len*.85)} ${n1(-wid)} ${n1(-len*.3)} 0 0Z" ${attr}/>`;
@@ -670,16 +674,19 @@ function plantSVG(sp,stage,seed){
   const top=[0,22,54,90,92][stage], tx=60+lean*(top/92), ty=G-top;
   const stem=`stroke="currentColor" stroke-width="1.3" stroke-linecap="round" fill="none"`;
   const leaf=`fill="currentColor" fill-opacity=".22" stroke="currentColor" stroke-width=".7"`;
-  const P=paints(sp);
+  const P=paints(sp), drawn=window.FlowerArt&&FlowerArt.has(sp.name);
+  const lf=(x,y,l,rot)=>drawn?FlowerArt.leaf(sp,x,y,l,rot,seed):petal(x,y,l,l*.3,rot,leaf);
   let g='';
-  if(stage===0){
+  if(stage===4&&drawn){
+    g=FlowerArt.specimen(sp,P,seed);
+  }else if(stage===0){
     g+=`<path d="M60 ${G+0}v-4" ${stem} stroke-dasharray="1 2"/><ellipse cx="60" cy="${G-7}" rx="3.4" ry="5.2" transform="rotate(24 60 ${G-7})" ${leaf}/>`;
   }else{
     g+=`<path d="M60 ${G}Q${n1(60-lean*.3)} ${n1(G-top*.55)} ${n1(tx)} ${n1(ty)}" ${stem}/>`;
     const pairs=stage===1?1:stage===2?2:3;
     for(let i=0;i<pairs;i++){
       const t=stage===1?.92:.22+i*.2, x=60+(tx-60)*t*t, y=G-top*t, len=(stage===1?13:21)-i*2.4;
-      g+=petal(x,y,len,len*.3,-52-R()*12,leaf)+petal(x,y,len,len*.3,52+R()*12,leaf);
+      g+=lf(x,y,len,-52-R()*12)+lf(x,y,len,52+R()*12);
     }
     if(stage===3){
       const fill=P.tip?`fill="${P.tip}" stroke="rgba(255,255,255,.55)" stroke-width=".6"`:P.a;
@@ -690,7 +697,12 @@ function plantSVG(sp,stage,seed){
   const delay=n1(R()*6);
   return `<svg class="pl" viewBox="0 12 120 134" aria-hidden="true"><path d="M6 ${G}H114" stroke="currentColor" stroke-opacity=".38" stroke-width=".8"/><g class="sway" style="animation-delay:-${delay}s">${g}</g></svg>`;
 }
+const iconCache=new Map();
 function flowerIcon(sp){
+  if(window.FlowerArt&&FlowerArt.has(sp.name)){
+    if(!iconCache.has(sp.name)) iconCache.set(sp.name,`<svg viewBox="-6 14 132 132" aria-hidden="true"><path d="M6 142H114" stroke="currentColor" stroke-opacity=".38" stroke-width=".8"/>${FlowerArt.specimen({name:sp.name},paints({}),sp.name)}</svg>`);
+    return iconCache.get(sp.name);
+  }
   const y=sp.form==='spike'?60:sp.form==='cup'?46:44, r=sp.form==='spike'?28:32;
   return `<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 ${y}V100" stroke="currentColor" stroke-width="1"/>${bloomHead({...sp,color:null},50,y,r,sp.key||sp.name)}</svg>`;
 }
@@ -901,7 +913,14 @@ function seedSheet(i){
     return `<button class="pick" data-act="plant" data-i="${i}" data-key="${esc(k)}"><span class="pick-art">${flowerMini(sp)}</span><span><b>${esc(sp.name)}</b><small>${stars(sp.rarity)} · 만개까지 ${GROW_HOURS[sp.rarity]}시간</small></span><span class="seedn">${s.seeds[k]}</span></button>`;
   }).join('')}</div>`);
 }
-function flowerMini(sp){ return `<svg viewBox="0 0 100 100" aria-hidden="true">${bloomHead(sp,50,50,sp.form==='spike'?30:40,sp.key)}</svg>`; }
+function flowerMini(sp){
+  const body=window.FlowerArt&&FlowerArt.has(sp.name)?FlowerArt.mini(sp,paints(sp),sp.name):bloomHead(sp,50,50,sp.form==='spike'?30:40,sp.key);
+  return `<svg viewBox="0 0 100 100" aria-hidden="true">${body}</svg>`;
+}
+function coloredPlate(e){
+  if(!window.FlowerArt||!FlowerArt.has(e.name)) return '';
+  return `<div class="ent-plate"><svg viewBox="-6 14 132 132" aria-hidden="true"><path d="M6 142H114" stroke="currentColor" stroke-opacity=".38" stroke-width=".8"/>${FlowerArt.specimen(e,paints(e),e.name)}</svg><p class="meta">이 사진의 색으로 그린 내 도감 그림이에요.</p></div>`;
+}
 function calHTML(c){
   const m=new Date().getMonth();
   return `<div class="cal" role="img" aria-label="개화 시기">${c.months.map((on,i)=>`<span class="${on?'on':''}${i===m?' now':''}">${i+1}</span>`).join('')}</div>`;
@@ -923,6 +942,7 @@ function entrySheet(key,photoIdx){
   openSheet(no,`<div class="ent-photo"><img src="${esc(photoSrc(ph.pid))}" alt="${esc(e.name)} 사진"></div>
     ${photos.length>1?`<div class="thumbs">${photos.map((p,i)=>`<button class="thumb" data-act="entryPhoto" data-key="${esc(key)}" data-idx="${i}" aria-pressed="${i===idx}" aria-label="사진 ${i+1}"><img src="${esc(photoSrc(p.pid))}" alt="" loading="lazy"></button>`).join('')}</div>`:''}
     <div><h3 class="ename">${esc(e.name)}</h3>${e.sci?`<p class="esci">${esc(e.sci)}</p>`:''}${e.family?`<p class="meta">${esc(e.family)}</p>`:''}</div>
+    ${coloredPlate(e)}
     <div class="stamps"><span class="stamp on">채집 ${photos.length}회</span><span class="stamp${bloomed?' on':''}">${bloomed?`개화 ${e.bloomed}회`:'아직 키우지 않음'}</span><span class="stamp"><span class="num">${stars(e.rarity)}</span></span></div>
     <div class="say"><h4>꽃말</h4>${bloomed?`<p class="kkot">${esc(e.kkotmal||'감정 기록이 없어요')}</p>`:'<p class="meta">이 꽃을 정원에서 끝까지 키우면 열려요.</p>'}</div>
     ${e.fact?`<div class="say"><h4>감정 노트</h4><p>${esc(e.fact)}</p></div>`:''}
