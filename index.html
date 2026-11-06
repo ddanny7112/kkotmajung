@@ -68,7 +68,7 @@ ul{list-style:none}
 .stats{display:flex;gap:14px;font-size:13px;color:var(--mist)}
 .stat{display:flex;align-items:center;gap:4px}
 .stat svg{width:14px;height:14px;flex:none}
-.stat b{font:500 14px/1 var(--mono);color:var(--paper)}
+.stat b{display:inline-block;font:500 14px/1 var(--mono);color:var(--paper)}
 .xp{height:2px;background:var(--hair)}
 .xp i{display:block;height:100%;background:var(--paper);transition:width .5s ease}
 
@@ -117,8 +117,6 @@ ul{list-style:none}
 .mini-art{position:relative;aspect-ratio:1;background:var(--ground-deep);color:var(--paper);overflow:hidden;display:block}
 .mini-art img,.slot-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .mini-art svg,.slot-art svg{position:absolute;inset:3%;width:94%;height:94%}
-.ent-plate{display:grid;grid-template-columns:128px minmax(0,1fr);gap:12px;align-items:center;color:var(--paper)}
-.ent-plate svg{width:128px;height:128px;display:block}
 .mini b{font-weight:400;font-size:14px;line-height:1.3;margin-top:4px}
 .mini small{font-size:12px;line-height:1.3;color:var(--mist)}
 img.broken{opacity:0}
@@ -215,12 +213,13 @@ img.broken{opacity:0}
 /* 도감 상세 */
 .ent-photo{position:relative;flex:none;background:var(--paper);aspect-ratio:1;max-height:56dvh;width:100%;margin-inline:auto;overflow:hidden}
 .ent-photo img{position:absolute;inset:5px;width:calc(100% - 10px);height:calc(100% - 10px);object-fit:cover;display:block}
-.ent-ghost{aspect-ratio:1;max-height:38dvh;margin-inline:auto;color:var(--paper);background:var(--ground)}
+.ent-ghost{aspect-ratio:1;max-height:42dvh;margin-inline:auto;color:var(--paper);background:var(--ground)}
 .ent-ghost svg{width:100%;height:100%}
 .thumbs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .thumb{flex:0 0 56px;width:56px;height:56px;background:var(--paper);padding:2px}
+.thumb.art{background:var(--ground);color:var(--paper)}
 .thumb[aria-pressed="true"]{outline:2px solid var(--paper);outline-offset:2px}
-.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb img,.thumb svg{width:100%;height:100%;object-fit:cover;display:block}
 .eno{font:400 13px var(--mono);color:var(--mist)}
 .ename{font:400 32px/1.15 var(--display)}
 .esci{font:italic 500 18px/1.3 var(--latin);color:var(--mist)}
@@ -264,8 +263,25 @@ img.broken{opacity:0}
 
 .toast{position:fixed;left:50%;bottom:calc(92px + max(env(safe-area-inset-bottom,0px),var(--kb,0px)));z-index:30;width:max-content;max-width:calc(100vw - 32px);transform:translateX(-50%);background:var(--paper);color:var(--ground-deep);padding:9px 14px;font-size:14px;line-height:1.4;text-align:center;box-shadow:0 6px 22px rgba(4,12,28,.45)}
 
+/* 움직임 */
+.mo-host{position:relative;flex:none}
+.mo-host canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:pan-y}
+.mo-host.live>svg,.mo-host.pending>svg{visibility:hidden}
+.pot{position:relative}
+.drop{position:absolute;left:50%;top:6%;width:6px;height:9px;margin-left:-3px;border-radius:50% 50% 50% 50%/65% 65% 35% 35%;background:var(--paper);opacity:0;animation:drop .62s cubic-bezier(.5,0,.9,.6) forwards}
+@keyframes drop{0%{opacity:0;transform:translateY(0)}15%{opacity:.9}100%{opacity:.2;transform:translateY(92px)}}
+.ring{position:absolute;left:50%;bottom:4%;width:56px;height:12px;margin-left:-28px;border:1px solid var(--paper);border-radius:50%;opacity:0;animation:ring .7s ease-out .45s forwards}
+@keyframes ring{0%{opacity:.7;transform:scale(.2)}100%{opacity:0;transform:scale(1.5)}}
+.fly{position:fixed;z-index:25;width:10px;height:6px;border-radius:6px 0;pointer-events:none}
+.stat b.bump{animation:bump .36s ease-out}
+@keyframes bump{40%{transform:scale(1.35)}}
+.mbi{transform-box:fill-box;transform-origin:center}
+.pop .mbi{animation:pop .42s cubic-bezier(.2,1.5,.4,1) backwards;animation-delay:calc(var(--i)*55ms + 120ms)}
+@keyframes pop{from{transform:scale(0) rotate(-40deg)}}
+
 @media (prefers-reduced-motion:reduce){
-  .sway,.scan,.sheet,.scrim,.view-in{animation:none}
+  .sway,.scan,.sheet,.scrim,.view-in,.pop .mbi,.stat b.bump{animation:none}
+  .drop,.ring{display:none}
   .print.lit #devColor,.xp i{transition:none}
 }
 </style>
@@ -362,6 +378,7 @@ img.broken{opacity:0}
 <script src="config.js"></script>
 <script src="art.js"></script>
 <script src="dex.js"></script>
+<script src="motion.js"></script>
 <script>
 'use strict';
 /* ---------- 규칙 ---------- */
@@ -792,11 +809,35 @@ function gainXP(n){
 
 /* ---------- 화면 ---------- */
 let tab='garden', bookFilter='all', gardenSig='';
+const shown={};
+function showStat(id,v){
+  const el=$(id);
+  if(shown[id]!==undefined&&v>shown[id]){ el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+  shown[id]=v; el.textContent=v;
+}
+const stillMode=()=>matchMedia('(prefers-reduced-motion:reduce)').matches;
+function burst(el,colors){
+  if(!el||stillMode()) return;
+  const r=el.getBoundingClientRect(), x=r.left+r.width/2, y=r.top+r.height*.4;
+  for(let i=0;i<16;i++){
+    const f=document.createElement('i'), a=Math.random()*Math.PI*2, d=60+Math.random()*90;
+    f.className='fly'; f.style.background=colors[i%colors.length]; f.style.left=x+'px'; f.style.top=y+'px';
+    document.body.append(f);
+    f.animate([
+      {transform:'translate(-50%,-50%) scale(1) rotate(0deg)',opacity:1},
+      {transform:`translate(calc(-50% + ${Math.round(Math.cos(a)*d)}px),calc(-50% + ${Math.round(Math.sin(a)*d+46)}px)) scale(.5) rotate(${Math.round(Math.random()*420)}deg)`,opacity:0},
+    ],{duration:720+Math.random()*420,easing:'cubic-bezier(.15,.7,.3,1)'}).onfinish=()=>f.remove();
+  }
+}
+function waterFx(){
+  const pot=$('.pot');
+  if(pot) pot.insertAdjacentHTML('beforeend','<i class="drop"></i><i class="drop" style="animation-delay:.14s;margin-left:-13px"></i><i class="drop" style="animation-delay:.26s;margin-left:7px"></i><i class="ring"></i>');
+}
 function renderTop(){
   const lv=levelOf(s.xp), a=xpFor(lv), b=xpFor(lv+1);
-  $('#stDew').textContent=s.water;
-  $('#stSeed').textContent=seedTotal();
-  $('#stLv').textContent=lv;
+  showStat('#stDew',s.water);
+  showStat('#stSeed',seedTotal());
+  showStat('#stLv',lv);
   $('#xpBar').style.width=clamp((s.xp-a)/(b-a)*100,0,100)+'%';
 }
 function plotHTML(p,i,now){
@@ -866,14 +907,14 @@ function buildMap(){
 }
 function renderMap(){
   const data=regionData(), ids=Object.keys(REGIONS);
-  let blooms='', labels='';
+  let blooms='', labels='', order=0;
   for(const id of ids){
     const d=data[id], pts=MAP.regions[id].pts, L=MAP.regions[id].label;
     $('#land-'+id).classList.toggle('seen',d.species.size>0);
     let i=0;
     for(const color of d.species.values()){
       const [x,y]=pts[i%pts.length]; i++;
-      if(hexOk(color)) blooms+=`<g class="mb" transform="translate(${x} ${y})"><g fill="${color}">${PETALS5}</g><circle r="1.700" fill="#F0F4F8"/></g>`;
+      if(hexOk(color)) blooms+=`<g class="mb" transform="translate(${x} ${y})"><g class="mbi" style="--i:${order++}"><g fill="${color}">${PETALS5}</g><circle r="1.700" fill="#F0F4F8"/></g></g>`;
     }
     const n=d.species.size;
     labels+=`<text class="mlabel${id==='ulleung'?' sm':''}" x="${L[0]}" y="${L[1]+4}">${esc(REGIONS[id].name)}${n?` <tspan>${n}</tspan>`:''}</text>`;
@@ -933,6 +974,7 @@ function setTab(t){
   for(const id of ['garden','map','book','today']) $('#'+id).hidden=t!==id;
   next.scrollTop=tabScroll[t]||0;
   next.classList.remove('view-in'); void next.offsetWidth; next.classList.add('view-in');
+  if(t==='map'){ const m=$('#mapBlooms'); m.classList.remove('pop'); void m.getBoundingClientRect(); m.classList.add('pop'); }
   document.querySelectorAll('.tab').forEach(b=>{ if(b.dataset.tab===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
 }
 let toastTimer=0, closeTimer=0;
@@ -949,6 +991,7 @@ function toast(msg){ const t=$('#toast'); t.textContent=msg; t.hidden=false; cle
 /* ---------- 시트 ---------- */
 function openSheet(title,html){
   const el=$('#sheet');
+  if(window.FlowerMotion) FlowerMotion.unmount();
   clearTimeout(closeTimer); el.classList.remove('out'); $('#scrim').classList.remove('out');
   el.innerHTML=`<div class="grip" aria-hidden="true"></div><div class="sheet-bar"><h3>${esc(title)}</h3><button class="x" data-act="closeSheet">닫기</button></div><div class="stack">${html}</div>`;
   el.hidden=false; $('#scrim').hidden=false; el.scrollTop=0;
@@ -957,6 +1000,7 @@ function openSheet(title,html){
 function closeSheet(){
   const el=$('#sheet'), sc=$('#scrim');
   if(el.hidden) return;
+  if(window.FlowerMotion) FlowerMotion.unmount();
   el.classList.add('out'); sc.classList.add('out');
   clearTimeout(closeTimer);
   closeTimer=setTimeout(()=>{ el.hidden=true; sc.hidden=true; el.classList.remove('out'); sc.classList.remove('out'); },170);
@@ -987,7 +1031,7 @@ function plantSheet(i){
   const base=speciesOf(p.key), sp={...base,color:p.color,core:p.core}, pct=progress(p,now), st=stageOf(pct), wet=p.wetUntil>now;
   const left=(1-pct)*p.total, line=st===4?'활짝 피었어요. 수확하면 경험치를 받고 도감 기록이 채워져요.':!wet?'흙이 말라 성장이 멈췄어요. 물을 주면 다시 자랍니다.':`만개까지 ${fmtLeft(left)}. 앞으로 ${fmtLeft(p.wetUntil-now)} 동안 흙이 촉촉해요.`;
   const giftNote=base.gift?'<p class="meta">사진을 찍지 않은 꽃이라 색이 없어요.</p>':'';
-  openSheet(sp.name,`<div class="plant-hd"><div>${plantSVG(sp,st,p.key+p.at)}</div><div class="stack"><p class="meta">${STAGES[st]} · <span class="num">${Math.floor(pct*100)}%</span></p><div class="bar"><i style="width:${pct*100}%"></i></div></div></div>
+  openSheet(sp.name,`<div class="plant-hd"><div class="pot">${plantSVG(sp,st,p.key+p.at)}</div><div class="stack"><p class="meta">${STAGES[st]} · <span class="num">${Math.floor(pct*100)}%</span></p><div class="bar"><i style="width:${pct*100}%"></i></div></div></div>
     <p>${line}</p>${giftNote}
     ${st===4?`<button class="btn pri" data-act="harvest" data-i="${i}">수확하기</button>`:`<button class="btn pri" data-act="water" data-i="${i}" ${s.water<1?'disabled':''}>물 주기 · 이슬 1방울</button><p class="meta">이슬 ${s.water}방울. 물을 주면 바로 8% 자라고 흙이 6시간 촉촉해져요.${s.water<DEW_MAX?` 다음 이슬까지 ${fmtLeft(Math.max(MIN,DEW_MS-(now-s.waterAt)))}.`:''}</p>`}`);
 }
@@ -1003,9 +1047,16 @@ function flowerMini(sp){
   const body=window.FlowerArt&&FlowerArt.has(sp.name)?FlowerArt.mini(sp,paints(sp),sp.name):bloomHead(sp,50,50,sp.form==='spike'?30:40,sp.key);
   return `<svg viewBox="0 0 100 100" aria-hidden="true">${body}</svg>`;
 }
-function coloredPlate(e){
-  if(!window.FlowerArt||!FlowerArt.has(e.name)) return '';
-  return `<div class="ent-plate"><svg viewBox="-6 14 132 132" aria-hidden="true"><path d="M6 142H114" stroke="currentColor" stroke-opacity=".38" stroke-width=".8"/>${FlowerArt.specimen(e,paints(e),e.name)}</svg><p class="meta">이 사진의 색으로 그린 내 도감 그림이에요.</p></div>`;
+function plateSVG(sp,P){
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="-6 14 132 132" style="color:#F0F4F8"><path d="M6 142H114" stroke="currentColor" stroke-opacity=".38" stroke-width=".8"/>${FlowerArt.specimen(sp,P,sp.name)}</svg>`;
+}
+function plateHTML(sp,colored,pending){
+  return `<div class="ent-ghost mo-host${pending?' pending':''}" id="moHost">${colored?colorIcon(sp):flowerIcon(sp)}</div>`;
+}
+function mountPlate(sp,colored,reveal,onBloom){
+  const host=$('#moHost'), done=()=>{ if(host) host.classList.remove('pending'); };
+  if(!host||!window.FlowerMotion){ done(); if(onBloom) onBloom(); return; }
+  FlowerMotion.mount(host,{line:plateSVG(sp,paints({})),color:colored?plateSVG(sp,paints(sp)):null,reveal,onBloom}).then(ok=>{ done(); if(!ok&&onBloom) onBloom(); },done);
 }
 function calHTML(c){
   const m=new Date().getMonth();
@@ -1021,22 +1072,23 @@ function entrySheet(key,photoIdx){
     return;
   }
   if(!e){
-    openSheet(`No.${pad3(c.no)}`,`<div class="ent-ghost">${flowerIcon(c)}</div>
+    openSheet(`No.${pad3(c.no)}`,`${plateHTML(c,false)}
       <div><h3 class="ename">${esc(c.name)}</h3><p class="esci">${esc(c.sci)}</p></div>
       <p class="meta">귀하기 <span class="num">${stars(c.rarity)}</span> · 직접 찍으면 도감 설명이 열려요.</p>
       <div class="say"><h4>피는 달</h4>${calHTML(c)}<p class="meta" style="margin-top:6px">지역과 해마다 조금씩 달라요.</p></div>
       <div class="say"><h4>찾아볼 곳</h4><p>${esc(c.hint)}</p>${regionLine(c)}</div>
       <button class="btn pri" data-act="shoot">이 꽃 찍으러 가기</button>`);
+    if(window.FlowerArt&&FlowerArt.has(c.name)) mountPlate(c,false);
     return;
   }
-  const photos=e.photos, idx=photoIdx==null?photos.length-1:photoIdx, ph=photos[idx];
+  const photos=e.photos, drawn=window.FlowerArt&&FlowerArt.has(e.name)&&hexOk(e.color);
+  const showPhoto=!drawn||photoIdx!=null, idx=photoIdx==null?photos.length-1:photoIdx, ph=photos[idx];
   const no=c?`No.${pad3(c.no)}`:'도감 밖의 꽃';
   const bloomed=e.bloomed>0;
-  openSheet(no,`<div class="ent-photo"><img src="${esc(photoSrc(ph.pid))}" alt="${esc(e.name)} 사진"></div>
-    ${photos.length>1?`<div class="thumbs">${photos.map((p,i)=>`<button class="thumb" data-act="entryPhoto" data-key="${esc(key)}" data-idx="${i}" aria-pressed="${i===idx}" aria-label="사진 ${i+1}"><img src="${esc(photoSrc(p.pid))}" alt="" loading="lazy"></button>`).join('')}</div>`:''}
+  openSheet(no,`${showPhoto?`<div class="ent-photo"><img src="${esc(photoSrc(ph.pid))}" alt="${esc(e.name)} 사진"></div>`:plateHTML(e,true)}
+    ${drawn||photos.length>1?`<div class="thumbs">${drawn?`<button class="thumb art" data-act="entryPhoto" data-key="${esc(key)}" data-idx="" aria-pressed="${!showPhoto}" aria-label="도감 그림">${flowerMini(e)}</button>`:''}${photos.map((p,i)=>`<button class="thumb" data-act="entryPhoto" data-key="${esc(key)}" data-idx="${i}" aria-pressed="${showPhoto&&i===idx}" aria-label="사진 ${i+1}"><img src="${esc(photoSrc(p.pid))}" alt="" loading="lazy"></button>`).join('')}</div>`:''}
     <div><h3 class="ename">${esc(e.name)}</h3>${e.sci?`<p class="esci">${esc(e.sci)}</p>`:''}${e.family?`<p class="meta">${esc(e.family)}</p>`:''}</div>
     ${c&&c.dex?`<p class="dex">${esc(c.dex)}</p>`:''}
-    ${coloredPlate(e)}
     <div class="stamps"><span class="stamp on">채집 ${photos.length}회</span><span class="stamp${bloomed?' on':''}">${bloomed?`개화 ${e.bloomed}회`:'아직 키우지 않음'}</span><span class="stamp"><span class="num">${stars(e.rarity)}</span></span></div>
     <div class="say"><h4>꽃말</h4>${bloomed?`<p class="kkot">${esc(e.kkotmal||'감정 기록이 없어요')}</p>`:'<p class="meta">이 꽃을 정원에서 끝까지 키우면 열려요.</p>'}</div>
     ${e.fact?`<div class="say"><h4>감정 노트</h4><p>${esc(e.fact)}</p></div>`:''}
@@ -1045,6 +1097,7 @@ function entrySheet(key,photoIdx){
       const where=[p.region&&REGIONS[p.region]?REGIONS[p.region].name:'',p.place].filter(Boolean).join(' · ')||'장소 기록 없음';
       return `<li><span class="num">${fmtDate(p.t)}</span><span>${esc(where)}${p.verified?'':' · 직접 등록'}</span><span class="num">${stars(p.grade,3)}</span></li>${p.region?'':`<li class="log-fix"><label class="fld">이 사진의 지역 넣기<select data-chg="photoRegion" data-key="${esc(key)}" data-idx="${i}">${regionOptions('')}</select></label></li>`}`;
     }).join('')}</ul></div>`);
+  if(!showPhoto) mountPlate(e,true);
 }
 function regionLine(c){ return c.regions.length?`<p class="meta" style="margin-top:6px">주로 ${c.regions.map(r=>REGIONS[r].name).join(', ')}</p>`:''; }
 function regionOptions(sel){ return `<option value="">지역을 고르세요</option>`+Object.keys(REGIONS).map(id=>{ const R=REGIONS[id]; return `<option value="${id}"${id===sel?' selected':''}>${esc(R.name)}${R.sub===R.name?'':` (${esc(R.sub)})`}</option>`; }).join(''); }
@@ -1058,7 +1111,7 @@ function doWater(i){
   s.water--; if(full) s.waterAt=now;
   const p=s.plots[i]; settle(p,now);
   p.grown=Math.min(p.total,p.grown+p.total*WATER_BOOST); p.wetUntil=now+WET_MS;
-  bump('water'); commit(); plantSheet(i);
+  bump('water'); commit(); plantSheet(i); waterFx();
 }
 function doPlant(i,key){
   if(!s.seeds[key]||s.plots[i]) return;
@@ -1081,9 +1134,10 @@ function doHarvest(i){
   s.entries[p.key].bloomed=(s.entries[p.key].bloomed||0)+1;
   s.seeds[p.key]=(s.seeds[p.key]||0)+1;
   bump('harvest'); commit();
-  openSheet('수확했어요',`<div class="plant-hd"><div>${plantSVG({...sp,color:p.color,core:p.core},4,p.key+p.at)}</div><div><p class="meta">${esc(sp.name)} · 씨앗 1개와 경험치 ${30*sp.rarity}</p></div></div>
+  openSheet('수확했어요',`<div class="plant-hd"><div class="pot">${plantSVG({...sp,color:p.color,core:p.core},4,p.key+p.at)}</div><div><p class="meta">${esc(sp.name)} · 씨앗 1개와 경험치 ${30*sp.rarity}</p></div></div>
     ${first?`<div class="say"><h4>새로 열린 꽃말</h4><p class="kkot">${esc(sp.kkotmal||'감정 기록이 없어요')}</p></div>`:''}
     <button class="btn pri" data-act="entry" data-key="${esc(p.key)}">도감에서 보기</button>`);
+  setTimeout(()=>burst($('.pot'),[p.color,p.core].filter(hexOk).concat('#F0F4F8')),240);
 }
 
 /* ---------- 촬영과 감정 ---------- */
@@ -1170,8 +1224,8 @@ function drawPrints(src){
   }
   bx.putImageData(img,0,0);
 }
-function capOpen(){ $('#cap').hidden=false; $('#cap').scrollTop=0; $('#print').className='print'; $('#capBody').innerHTML=''; }
-function capClose(){ if(job&&job.ctl) job.ctl.abort(); job=null; $('#cap').hidden=true; }
+function capOpen(){ $('#cap').hidden=false; $('#cap').scrollTop=0; $('#print').hidden=false; $('#print').className='print'; $('#capBody').innerHTML=''; }
+function capClose(){ if(job&&job.ctl) job.ctl.abort(); job=null; if(window.FlowerMotion) FlowerMotion.unmount(); $('#cap').hidden=true; }
 function waitUI(){
   const t0=Date.now();
   $('#capBody').innerHTML=`<div class="wait"><b>꽃을 감정하고 있어요</b><span class="num" id="waitSec">0초</span></div><p class="meta">사진 속 꽃의 종류와 사진 솜씨를 살피는 중이에요. 보통 몇 초에서 30초쯤 걸려요.</p><button class="btn" data-act="capCancel">취소</button>`;
@@ -1310,10 +1364,14 @@ async function register(btn){
   commit();
   me.done=true;
   const free=s.plots.findIndex(p=>!p);
+  const drawn=window.FlowerArt&&FlowerArt.has(e.name)&&hexOk(e.color);
   $('#print').classList.add('lit');
-  $('#capBody').innerHTML=`<p class="r-tag">등록을 마쳤어요</p><h2 class="r-name">${esc(r.name)}</h2>${r.no&&isNew&&CATALOG[r.no-1].dex?`<p class="dex">${esc(CATALOG[r.no-1].dex)}</p>`:''}<p>씨앗 ${seeds}개와 이슬 2방울을 받았어요.${firstHere?` 새 지역 ${esc(REGIONS[region].name)}에 첫 꽃이 피어서 이슬 3방울을 더 받았어요.`:''}</p>
+  $('#print').hidden=drawn;
+  $('#cap').scrollTop=0;
+  $('#capBody').innerHTML=`${drawn?plateHTML(e,true,true):''}<p class="r-tag">등록을 마쳤어요</p><h2 class="r-name">${esc(r.name)}</h2>${r.no&&isNew&&CATALOG[r.no-1].dex?`<p class="dex">${esc(CATALOG[r.no-1].dex)}</p>`:''}<p>씨앗 ${seeds}개와 이슬 2방울을 받았어요.${firstHere?` 새 지역 ${esc(REGIONS[region].name)}에 첫 꽃이 피어서 이슬 3방울을 더 받았어요.`:''}</p>
     ${free>=0?`<button class="btn pri" data-act="plantNow" data-i="${free}" data-key="${esc(r.key)}">정원에 바로 심기</button>`:'<p class="meta">화단이 꽉 찼어요. 꽃을 수확하면 자리가 나요.</p>'}
     <button class="btn" data-act="seeEntry" data-key="${esc(r.key)}">도감에서 보기</button>`;
+  if(drawn) mountPlate(e,true,'play',()=>{ haptic('success'); burst($('#moHost'),[e.color,e.core].filter(hexOk).concat('#F0F4F8')); });
 }
 async function wipeAll(btn){
   btn.disabled=true; btn.textContent='지우고 있어요';
@@ -1373,7 +1431,7 @@ document.addEventListener('click',e=>{
     case 'water': haptic('light'); doWater(i); break;
     case 'harvest': haptic('success'); doHarvest(i); break;
     case 'entry': entrySheet(key); break;
-    case 'entryPhoto': entrySheet(key,+b.dataset.idx); break;
+    case 'entryPhoto': entrySheet(key,b.dataset.idx===''?null:+b.dataset.idx); break;
     case 'filter': bookFilter=b.dataset.f; renderBook(); break;
     case 'goMonth': bookFilter='month'; renderBook(); setTab('book'); break;
     case 'closeSheet': closeSheet(); break;
