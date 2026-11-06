@@ -4,6 +4,7 @@
 
 - `index.html`: 게임 화면
 - `art.js`: 도감 꽃 84종의 그림
+- `dex.js`: 도감 꽃 84종의 한 줄 설명
 - `config.js`: 공개되어도 되는 Supabase 주소와 publishable key
 - `supabase/schema.sql`: 데이터베이스 구조
 - `supabase/functions/identify/index.ts`: 사진 감정 서버 함수

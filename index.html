@@ -207,6 +207,7 @@ img.broken{opacity:0}
 .say h4{margin:0 0 2px;font-weight:400;font-size:13px;color:var(--mist)}
 .say p{max-width:34em}
 .kkot{font:400 21px/1.35 var(--display)}
+.dex{font-size:16px;line-height:1.65;padding-block:10px;border-block:1px solid var(--hair);max-width:34em}
 .cal{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2px;margin-top:4px}
 .cal span{font:400 11px/22px var(--mono);height:22px;text-align:center;color:var(--mist);background:var(--hair)}
 .cal span.on{background:var(--paper);color:var(--ground-deep)}
@@ -335,6 +336,7 @@ img.broken{opacity:0}
 <script src="vendor/supabase.js"></script>
 <script src="config.js"></script>
 <script src="art.js"></script>
+<script src="dex.js"></script>
 <script>
 'use strict';
 /* ---------- 규칙 ---------- */
@@ -458,7 +460,7 @@ function monthText(src){
 }
 const CATALOG=CATALOG_SRC.trim().split('\n').map((l,i)=>{
   const [name,sci,m,r,form,petals,hint,rg]=l.split('|');
-  return {no:i+1,key:'c'+(i+1),name,sci,months:parseMonths(m),mtxt:monthText(m),rarity:+r,form,petals:+petals,hint,regions:rg?rg.split(','):[]};
+  return {no:i+1,key:'c'+(i+1),name,sci,months:parseMonths(m),mtxt:monthText(m),rarity:+r,form,petals:+petals,hint,regions:rg?rg.split(','):[],dex:(window.FLOWER_DEX||{})[name]||''};
 });
 const REGIONAL=CATALOG.filter(c=>c.regions.length);
 const byKey=Object.fromEntries(CATALOG.map(c=>[c.key,c]));
@@ -956,7 +958,7 @@ function entrySheet(key,photoIdx){
   if(!e){
     openSheet(`No.${pad3(c.no)}`,`<div class="ent-ghost">${flowerIcon(c)}</div>
       <div><h3 class="ename">${esc(c.name)}</h3><p class="esci">${esc(c.sci)}</p></div>
-      <p class="meta">귀하기 <span class="num">${stars(c.rarity)}</span></p>
+      <p class="meta">귀하기 <span class="num">${stars(c.rarity)}</span> · 직접 찍으면 도감 설명이 열려요.</p>
       <div class="say"><h4>피는 달</h4>${calHTML(c)}<p class="meta" style="margin-top:6px">지역과 해마다 조금씩 달라요.</p></div>
       <div class="say"><h4>찾아볼 곳</h4><p>${esc(c.hint)}</p>${regionLine(c)}</div>
       <button class="btn pri" data-act="shoot">이 꽃 찍으러 가기</button>`);
@@ -968,6 +970,7 @@ function entrySheet(key,photoIdx){
   openSheet(no,`<div class="ent-photo"><img src="${esc(photoSrc(ph.pid))}" alt="${esc(e.name)} 사진"></div>
     ${photos.length>1?`<div class="thumbs">${photos.map((p,i)=>`<button class="thumb" data-act="entryPhoto" data-key="${esc(key)}" data-idx="${i}" aria-pressed="${i===idx}" aria-label="사진 ${i+1}"><img src="${esc(photoSrc(p.pid))}" alt="" loading="lazy"></button>`).join('')}</div>`:''}
     <div><h3 class="ename">${esc(e.name)}</h3>${e.sci?`<p class="esci">${esc(e.sci)}</p>`:''}${e.family?`<p class="meta">${esc(e.family)}</p>`:''}</div>
+    ${c&&c.dex?`<p class="dex">${esc(c.dex)}</p>`:''}
     ${coloredPlate(e)}
     <div class="stamps"><span class="stamp on">채집 ${photos.length}회</span><span class="stamp${bloomed?' on':''}">${bloomed?`개화 ${e.bloomed}회`:'아직 키우지 않음'}</span><span class="stamp"><span class="num">${stars(e.rarity)}</span></span></div>
     <div class="say"><h4>꽃말</h4>${bloomed?`<p class="kkot">${esc(e.kkotmal||'감정 기록이 없어요')}</p>`:'<p class="meta">이 꽃을 정원에서 끝까지 키우면 열려요.</p>'}</div>
@@ -1237,7 +1240,7 @@ async function register(btn){
   me.done=true;
   const free=s.plots.findIndex(p=>!p);
   $('#print').classList.add('lit');
-  $('#capBody').innerHTML=`<p class="r-tag">등록을 마쳤어요</p><h2 class="r-name">${esc(r.name)}</h2><p>씨앗 ${seeds}개와 이슬 2방울을 받았어요.${firstHere?` 새 지역 ${esc(REGIONS[region].name)}에 첫 꽃이 피어서 이슬 3방울을 더 받았어요.`:''}</p>
+  $('#capBody').innerHTML=`<p class="r-tag">등록을 마쳤어요</p><h2 class="r-name">${esc(r.name)}</h2>${r.no&&isNew&&CATALOG[r.no-1].dex?`<p class="dex">${esc(CATALOG[r.no-1].dex)}</p>`:''}<p>씨앗 ${seeds}개와 이슬 2방울을 받았어요.${firstHere?` 새 지역 ${esc(REGIONS[region].name)}에 첫 꽃이 피어서 이슬 3방울을 더 받았어요.`:''}</p>
     ${free>=0?`<button class="btn pri" data-act="plantNow" data-i="${free}" data-key="${esc(r.key)}">정원에 바로 심기</button>`:'<p class="meta">화단이 꽉 찼어요. 꽃을 수확하면 자리가 나요.</p>'}
     <button class="btn" data-act="seeEntry" data-key="${esc(r.key)}">도감에서 보기</button>`;
 }
