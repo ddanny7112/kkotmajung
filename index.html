@@ -24,251 +24,297 @@
 })();
 </script>
 <style>
-/* Layout: a single thumb-reach column of cyanotype plates over Prussian blue, with a camera dock at the bottom.
-   The interface stays monochrome on purpose: the only colour on screen comes from photos the player took. */
+/* Layout: one thumb-reach column on the blueprint ground, under floating glass bars.
+   The interface stays paper on Prussian blue. Colour comes only from the player's photos and from light splitting at the rim of the glass. */
 :root{
   --ground:#12315F;
-  --ground-deep:#0B2145;
-  --ground-lift:#1B4077;
-  --paper:#F0F4F8;
-  --mist:#AFC4DD;
-  --faint:rgba(240,244,248,.26);
-  --hair:rgba(240,244,248,.14);
-  --scrim:rgba(5,15,34,.66);
+  --ground-2:#0E2750;
+  --surface:#0E2750;
+  --surface-lift:#17396D;
+  --mat:#F0F4F8;
+  --ink:#F0F4F8;
+  --on-ink:#0B2145;
+  --sub:#AFC4DD;
+  --faint:rgba(240,244,248,.3);
+  --hair:rgba(240,244,248,.16);
+  --scrim:rgba(5,14,32,.55);
+  --r1:#38D6FF;
+  --r2:#1F5BFF;
+  --r3:#FF2F5B;
+  --glass:rgba(23,57,109,.46);
+  --glass-strong:rgba(13,37,76,.74);
+  --glass-line:rgba(240,244,248,.26);
+  --lift:0 10px 30px rgba(3,10,24,.42),0 2px 6px rgba(3,10,24,.25);
+  --tile:linear-gradient(155deg,rgba(240,244,248,.15),rgba(240,244,248,.04));
+  --tile-edge:inset 0 0 0 1px rgba(240,244,248,.16),inset 0 1px 0 rgba(240,244,248,.18),0 8px 18px rgba(3,10,24,.28);
   --display:"Grandiflora One","Gowun Batang","Noto Serif KR",serif;
   --body:"Gowun Dodum","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,"Gowun Dodum",monospace;
   --latin:"Cormorant Garamond","Times New Roman",serif;
   --gutter-l:max(16px,env(safe-area-inset-left,0px));
   --gutter-r:max(16px,env(safe-area-inset-right,0px));
+  --top-h:calc(env(safe-area-inset-top,0px) + 56px);
+  --dock-gap:max(calc(env(safe-area-inset-bottom,0px) - 12px),12px);
+  --dock-h:calc(var(--dock-gap) + 66px);
   color-scheme:dark;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;background:var(--ground)}
 img{max-width:100%}
 html,body{height:100%}
-body{margin:0;position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden;overscroll-behavior:none;touch-action:manipulation;background-color:var(--ground);background-image:var(--grain,none);color:var(--paper);font:400 15px/1.6 var(--body);word-break:keep-all;overflow-wrap:anywhere;-webkit-tap-highlight-color:transparent}
+body{margin:0;position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;touch-action:manipulation;background-color:var(--ground);background-image:var(--grain,none);color:var(--ink);font:400 15px/1.6 var(--body);word-break:keep-all;overflow-wrap:anywhere;-webkit-tap-highlight-color:transparent}
 .app body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .app input{-webkit-user-select:text;user-select:text}
 img,svg{-webkit-user-drag:none}
 button,input,select{font:inherit;color:inherit}
 button{background:none;border:0;padding:0;cursor:pointer}
-:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 h1,h2,h3,p,ul{margin:0;padding:0}
 ul{list-style:none}
 .vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
+/* 유리 가장자리에서 갈라지는 빛 */
+.dock-in::after,.shutter::after,.slot.got .slot-art::after,.mini.got .mini-art::after,.plot.bloom::after,.gl-tile::after,.ent-photo::after,.print::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;
+  background:conic-gradient(transparent 0 4%,var(--r1) 8%,var(--r2) 12.5%,var(--r3) 17%,transparent 21% 54%,var(--r1) 58%,var(--r2) 62.5%,var(--r3) 67%,transparent 71%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+}
+
 /* 상단 */
-.top{flex:none;position:relative;z-index:5;padding-top:env(safe-area-inset-top,0px);background:var(--ground);border-bottom:1px solid var(--hair)}
-.top-in{max-width:520px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:10px 9px}
+.top{position:absolute;top:0;left:0;right:0;z-index:5;padding-top:env(safe-area-inset-top,0px);background:var(--glass-strong);-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);box-shadow:inset 0 -.5px 0 var(--faint)}
+.top-in{max-width:520px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:10px 8px}
 .mark{font:400 31px/1.1 var(--display);letter-spacing:.01em;-webkit-text-stroke:.5px currentColor}
 .book-title,.ename,.r-name,.kkot{-webkit-text-stroke:.4px currentColor}
-.stats{display:flex;gap:14px;font-size:13px;color:var(--mist)}
+.stats{display:flex;gap:14px;font-size:13px;color:var(--sub)}
 .stat{display:flex;align-items:center;gap:4px}
 .stat svg{width:14px;height:14px;flex:none}
-.stat b{font:500 14px/1 var(--mono);color:var(--paper)}
+.stat b{display:inline-block;font:500 14px/1 var(--mono);color:var(--ink)}
 .xp{height:2px;background:var(--hair)}
-.xp i{display:block;height:100%;background:var(--paper);transition:width .5s ease}
+.xp i{display:block;height:100%;background:var(--ink);transition:width .5s ease}
 
-.shell{flex:1 1 auto;min-height:0;width:100%;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:18px 44px;display:flex;flex-direction:column;align-items:center;gap:30px}
+.shell{position:absolute;inset:0;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:calc(var(--top-h) + 16px) calc(var(--dock-h) + 34px);display:flex;flex-direction:column;align-items:center;gap:28px}
 .shell>*{flex:none;width:100%;max-width:488px}
-.view-in{animation:viewIn .18s ease-out}
+.view-in{animation:viewIn .2s ease-out}
 @keyframes viewIn{from{opacity:.35;transform:translateY(6px)}}
 .plot,.slot,.mini,.pick,.rg,.chip,.tab,.btn,.x,.linkish{transition:opacity .12s,transform .12s}
-.plot:active,.slot:active,.mini:active,.pick:active,.rg:active,.chip:active,.tab:active,.x:active,.linkish:active{opacity:.55}
+.plot:active,.slot:active,.mini:active,.tab:active{transform:scale(.96)}
+.pick:active,.rg:active,.chip:active,.x:active,.linkish:active{opacity:.55}
 .btn:active{opacity:.85;transform:scale(.98)}
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px}
 .sec-head h2{font:400 18px/1.3 var(--body)}
-.sec-head span{font-size:13px;color:var(--mist)}
-.lead{font-size:15px;color:var(--mist)}
+.sec-head span{font-size:13px;color:var(--sub)}
+.lead{font-size:15px;color:var(--sub)}
 
 /* 화단 */
-.plate{border-block:1px solid var(--faint);padding-block:6px 10px}
-.plots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:4px;row-gap:12px}
-.plot{display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0;padding-bottom:2px;border-radius:4px}
-.plot-art{position:relative;width:100%;color:var(--paper)}
+.plots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.plot{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;min-width:0;padding:6px 6px 10px;border-radius:22px;background:var(--tile);box-shadow:var(--tile-edge)}
+.plot.empty{background:rgba(240,244,248,.03);box-shadow:inset 0 0 0 1px var(--hair)}
+.plot-art{position:relative;width:100%;color:var(--ink)}
 .pl{display:block;width:100%;height:auto;overflow:visible}
 .plot-name{font-size:14px;line-height:1.3;margin-top:2px}
-.plot-meta{font-size:12px;line-height:1.3;color:var(--mist);min-height:1.3em}
-.plot-meta.want{color:var(--paper)}
-.plot.empty .plot-name{color:var(--mist)}
+.plot-meta{font-size:12px;line-height:1.3;color:var(--sub);min-height:1.3em}
+.plot-meta.want{color:var(--ink)}
+.plot.empty .plot-name{color:var(--sub)}
 .reg{position:absolute;left:50%;top:58%;width:18px;height:18px;transform:translate(-50%,-50%);opacity:.5}
-.reg::before,.reg::after{content:"";position:absolute;background:var(--paper)}
+.reg::before,.reg::after{content:"";position:absolute;background:var(--ink)}
 .reg::before{left:50%;top:0;bottom:0;width:1px}
 .reg::after{top:50%;left:0;right:0;height:1px}
 .sway{transform-box:view-box;transform-origin:60px 142px;animation:sway 6.5s ease-in-out infinite alternate}
 @keyframes sway{from{transform:rotate(-1.4deg)}to{transform:rotate(1.4deg)}}
 
 /* 할 일 */
+.tasks,.rgs{border-radius:22px;background:var(--tile);box-shadow:var(--tile-edge);padding-inline:16px}
 .tasks{display:flex;flex-direction:column}
-.tasks li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:10px;align-items:center;padding-block:9px;border-bottom:1px solid var(--hair)}
-.tasks li:first-child{border-top:1px solid var(--hair)}
-.chk{width:16px;height:16px;border:1px solid var(--mist);border-radius:50%}
-.done .chk{background:var(--paper);border-color:var(--paper)}
-.done .t{color:var(--mist)}
-.tasks .num{font-size:13px;color:var(--mist)}
+.tasks li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:10px;align-items:center;padding-block:11px;border-bottom:1px solid var(--hair)}
+.tasks li:last-child{border-bottom:0}
+.chk{width:16px;height:16px;border:1px solid var(--sub);border-radius:50%}
+.done .chk{background:var(--ink);border-color:var(--ink)}
+.done .t{color:var(--sub)}
+.tasks .num{font-size:13px;color:var(--sub)}
 
 /* 이달의 꽃 */
-.strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:6px;scrollbar-width:none}
+.strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;margin:-6px;padding:6px 6px 16px;scrollbar-width:none}
 .strip::-webkit-scrollbar{display:none}
 .mini{flex:0 0 104px;scroll-snap-align:start;text-align:left;display:flex;flex-direction:column;gap:2px}
-.mini-art{position:relative;aspect-ratio:1;background:var(--ground-deep);color:var(--paper);overflow:hidden;display:block}
+.mini-art{position:relative;aspect-ratio:1;border-radius:24px;background:var(--tile);box-shadow:var(--tile-edge);color:var(--ink);overflow:hidden;display:block}
 .mini-art img,.slot-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-.mini-art svg,.slot-art svg{position:absolute;inset:3%;width:94%;height:94%}
-.ent-plate{display:grid;grid-template-columns:128px minmax(0,1fr);gap:12px;align-items:center;color:var(--paper)}
-.ent-plate svg{width:128px;height:128px;display:block}
+.mini-art svg,.slot-art svg{position:absolute;inset:7%;width:86%;height:86%}
 .mini b{font-weight:400;font-size:14px;line-height:1.3;margin-top:4px}
-.mini small{font-size:12px;line-height:1.3;color:var(--mist)}
+.mini small{font-size:12px;line-height:1.3;color:var(--sub)}
 img.broken{opacity:0}
 
-.note{font-size:13px;color:var(--mist)}
+.note{font-size:13px;color:var(--sub)}
 
 /* 도감 */
 .book-title{font:400 34px/1.15 var(--display)}
-.book-sum{display:flex;gap:18px;margin-top:6px;color:var(--mist);font-size:14px}
-.book-sum b{font:500 15px var(--mono);color:var(--paper)}
-.meter{height:3px;background:var(--hair);margin-top:12px}
-.meter i{display:block;height:100%;background:var(--paper)}
+.book-sum{display:flex;gap:18px;margin-top:6px;color:var(--sub);font-size:14px}
+.book-sum b{font:500 15px var(--mono);color:var(--ink)}
+.meter{height:4px;border-radius:2px;background:var(--hair);margin-top:12px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--ink)}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px}
-.chip{padding:6px 12px;border:1px solid var(--faint);border-radius:99px;font-size:13px;line-height:1.3;color:var(--mist)}
-.chip[aria-pressed="true"]{background:var(--paper);border-color:var(--paper);color:var(--ground-deep)}
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 10px;margin-top:16px}
+.chip{padding:6px 13px;border-radius:99px;background:rgba(240,244,248,.06);box-shadow:inset 0 0 0 1px var(--hair);font-size:13px;line-height:1.3;color:var(--sub)}
+.chip[aria-pressed="true"]{background:var(--ink);box-shadow:none;color:var(--on-ink)}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 12px;margin-top:16px}
 .slot{display:flex;flex-direction:column;text-align:left;min-width:0;content-visibility:auto;contain-intrinsic-size:auto 150px}
-.slot-art{position:relative;display:block;aspect-ratio:1;background:var(--ground-deep);color:var(--paper);overflow:hidden}
-.slot:not(.got) .slot-art svg{opacity:.62}
-.slot.got .slot-art{box-shadow:inset 0 0 0 1px var(--paper)}
-.slot .slot-art img.snap{inset:auto 5px 5px auto;width:32%;height:32%;border:2px solid var(--paper)}
-.qm{position:absolute;inset:0;display:grid;place-items:center;font:400 46px/1 var(--display);color:var(--mist);opacity:.85}
+.slot-art{position:relative;display:block;aspect-ratio:1;border-radius:24px;background:var(--tile);box-shadow:var(--tile-edge);color:var(--ink);overflow:hidden}
+.slot:not(.got) .slot-art svg{opacity:.85}
+.slot .slot-art img.snap{inset:auto 6px 6px auto;width:32%;height:32%;border-radius:10px;border:2px solid var(--mat)}
+.qm{position:absolute;inset:0;display:grid;place-items:center;font:400 46px/1 var(--display);color:var(--sub);opacity:.7}
 .pick-art{position:relative}
 .pick-art .qm{font-size:26px}
-.ent-ghost.q{position:relative;height:200px}
-.ent-ghost.q .qm{font-size:90px}
-.seal{position:absolute;left:5px;top:5px;width:26px;height:26px;border-radius:50%;background:var(--ground-deep);color:var(--paper);font-size:11px;line-height:26px;text-align:center}
-.slot-no{font:400 11px/1.4 var(--mono);color:var(--mist);margin-top:5px}
+.seal{position:absolute;left:7px;top:7px;width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--on-ink);font-size:11px;line-height:26px;text-align:center}
+.slot-no{font:400 11px/1.4 var(--mono);color:var(--sub);margin-top:6px}
 .slot-name{font-size:14px;line-height:1.3}
-.slot:not(.got) .slot-name{color:var(--mist)}
-.empty-note{grid-column:1/-1;padding-block:24px;color:var(--mist)}
+.slot:not(.got) .slot-name{color:var(--sub)}
+.empty-note{grid-column:1/-1;padding-block:24px;color:var(--sub)}
 
 /* 꽃 지도 */
 .mapbox{margin-top:14px}
-.map{display:block;width:100%;height:auto;overflow:visible}
-.land{fill:var(--ground-deep);stroke:var(--paper);stroke-width:.8;stroke-linejoin:round;cursor:pointer;transition:fill .2s}
-.land.seen,.land:hover{fill:var(--ground-lift)}
+.map{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 8px 14px rgba(3,10,24,.32))}
+.land{fill:var(--on-ink);stroke:var(--ink);stroke-width:.8;stroke-linejoin:round;cursor:pointer;transition:fill .2s}
+.land.seen,.land:hover{fill:var(--surface-lift)}
 .inner{fill:none;stroke:var(--faint);stroke-width:.6;pointer-events:none}
 .inset{fill:var(--ground);fill-opacity:.01;stroke:var(--faint);stroke-width:.8;cursor:pointer}
-.dokdo{fill:var(--paper);pointer-events:none}
-.mlabel{font:400 13px var(--body);fill:var(--paper);text-anchor:middle;paint-order:stroke;stroke:var(--ground-deep);stroke-width:3px;stroke-linejoin:round;pointer-events:none}
+.dokdo{fill:var(--ink);pointer-events:none}
+.mlabel{font:400 13px var(--body);fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--on-ink);stroke-width:3px;stroke-linejoin:round;pointer-events:none}
 .mlabel.sm{font-size:10px}
-.mlabel tspan{font:500 11px var(--mono);fill:var(--mist)}
+.mlabel tspan{font:500 11px var(--mono);fill:var(--sub)}
 .mb{pointer-events:none}
-.rgs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px;margin-top:14px;border-top:1px solid var(--hair)}
+.rgs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 18px;margin-top:14px}
 .rg-name{display:flex;align-items:center;gap:7px;min-width:0}
 .badge{width:22px;height:22px;flex:none;color:var(--faint)}
-.badge.got{color:var(--paper)}
-.rg{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;min-height:44px;padding-block:9px;border-bottom:1px solid var(--hair)}
-.rg .num{font-size:13px;color:var(--mist)}
-.nowtag{font-size:12px;line-height:1.3;padding:1px 7px;background:var(--paper);color:var(--ground-deep)}
+.badge.got{color:var(--ink)}
+.rg{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;min-height:44px;padding-block:10px;border-bottom:1px solid var(--hair)}
+.rg:nth-last-child(-n+2){border-bottom:0}
+.rg .num{font-size:13px;color:var(--sub)}
+.nowtag{font-size:12px;line-height:1.3;padding:2px 8px;border-radius:99px;background:var(--ink);color:var(--on-ink)}
 .log-fix{display:block!important}
 .foot{display:flex;flex-wrap:wrap;gap:6px 20px;align-items:center;font-size:14px}
-.foot a,.textlink{color:var(--mist);text-decoration:underline;text-underline-offset:3px}
+.foot a,.textlink{color:var(--sub);text-decoration:underline;text-underline-offset:3px}
 .foot a{min-height:32px;display:inline-flex;align-items:center}
 
 /* 하단 도크 */
-.dock{position:relative;flex:none;z-index:6;background:var(--ground-deep);border-top:1px solid var(--faint);padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-bottom:env(safe-area-inset-bottom,0px)}
-.dock-in{max-width:488px;margin:0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) 92px repeat(2,minmax(0,1fr));height:62px;align-items:center}
-.tab{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:12px;line-height:1.2;color:var(--mist);padding-block:6px}
+.dock{position:absolute;z-index:6;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:var(--dock-gap)}
+.dock-in{position:relative;max-width:440px;margin:0 auto;height:66px;border-radius:33px;padding-inline:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) 92px repeat(2,minmax(0,1fr));align-items:center;background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(1.8);backdrop-filter:blur(22px) saturate(1.8);box-shadow:var(--lift),inset 0 0 0 .5px var(--glass-line),inset 0 1px 1px var(--glass-line)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:12px;line-height:1.2;color:var(--sub);padding-block:6px}
 .tab svg{width:22px;height:22px}
-.tab[aria-current="page"]{color:var(--paper)}
-.shutter{justify-self:center;width:76px;height:76px;margin-top:-22px;border-radius:50%;background:var(--paper);color:var(--ground-deep);box-shadow:0 0 0 6px var(--ground-deep),0 0 0 7px var(--faint);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-size:12px;line-height:1.2;transition:transform .12s}
-.shutter:active{transform:scale(.94)}
+.tab[aria-current="page"]{color:var(--ink)}
+.shutter{position:relative;justify-self:center;width:78px;height:78px;margin-top:-26px;border-radius:50%;background:radial-gradient(circle at 35% 25%,#FFFFFF 0,#F0F4F8 45%,#C4D2E4 100%);color:var(--on-ink);box-shadow:0 12px 26px rgba(3,10,24,.5),inset 0 0 0 1px rgba(255,255,255,.9),inset 0 -6px 12px rgba(18,49,95,.16);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;line-height:1.2;transition:transform .12s}
+.shutter::after{inset:-1px;padding:2.5px;animation:turn 9s linear infinite}
+@keyframes turn{to{transform:rotate(360deg)}}
+.shutter:active{transform:scale(.93)}
 .shutter svg{width:26px;height:26px}
 
 /* 시트 */
 .scrim{position:fixed;inset:0;z-index:11;background:var(--scrim);animation:fadeIn .18s ease-out}
 .scrim.out{opacity:0;transition:opacity .17s ease-in}
 @keyframes fadeIn{from{opacity:0}}
-.sheet.out{transform:translateY(100%);transition:transform .17s ease-in}
+.sheet.out{transform:translateY(calc(100% + 16px));transition:transform .17s ease-in}
 .grip{width:38px;height:4px;border-radius:2px;background:var(--faint);margin:-4px auto 10px}
 .grip,.sheet-bar{touch-action:none}
 .sheet-bar .x{touch-action:manipulation}
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:12;max-width:520px;margin:0 auto;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--ground-deep);border-top:1px solid var(--faint);border-radius:16px 16px 0 0;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:14px calc(22px + env(safe-area-inset-bottom,0px));animation:rise .24s cubic-bezier(.2,.8,.2,1);transition:transform .2s cubic-bezier(.2,.8,.2,1)}
-@keyframes rise{from{transform:translateY(100%)}}
+.sheet{position:fixed;left:8px;right:8px;bottom:8px;z-index:12;max-width:520px;margin:0 auto;max-height:86dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--glass-strong);-webkit-backdrop-filter:blur(30px) saturate(1.8);backdrop-filter:blur(30px) saturate(1.8);border-radius:34px;box-shadow:0 20px 60px rgba(3,10,24,.6),inset 0 0 0 .5px var(--glass-line);padding-inline:18px;padding-block:14px calc(18px + env(safe-area-inset-bottom,0px)*.6);animation:rise .28s cubic-bezier(.2,.85,.25,1);transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{transform:translateY(calc(100% + 16px))}}
 .sheet-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;min-height:32px}
 .sheet-bar h3{font:400 18px/1.3 var(--body)}
-.x{width:44px;height:32px;margin-right:-8px;font-size:14px;color:var(--mist);text-align:right;padding-right:8px;flex:none}
+.x{width:44px;height:32px;margin-right:-8px;font-size:14px;color:var(--sub);text-align:right;padding-right:8px;flex:none}
 .stack{display:flex;flex-direction:column;gap:12px}
-.plant-hd{display:grid;grid-template-columns:112px minmax(0,1fr);gap:14px;align-items:end;color:var(--paper)}
-.bar{height:6px;background:var(--hair)}
-.bar i{display:block;height:100%;background:var(--paper)}
-.meta{font-size:14px;color:var(--mist)}
+.plant-hd{display:grid;grid-template-columns:112px minmax(0,1fr);gap:14px;align-items:end;color:var(--ink)}
+.bar{height:6px;border-radius:3px;background:var(--hair);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ink)}
+.meta{font-size:14px;color:var(--sub)}
 .row{display:flex;gap:8px}
 .row>*{flex:1 1 0;min-width:0}
-.btn{display:block;width:100%;min-height:48px;padding:11px 14px;text-align:center;line-height:1.3;border:1px solid var(--faint)}
-.btn.pri{background:var(--paper);border-color:var(--paper);color:var(--ground-deep)}
+.btn{display:block;width:100%;min-height:50px;padding:12px 14px;text-align:center;line-height:1.3;border-radius:17px;background:rgba(240,244,248,.08);box-shadow:inset 0 0 0 1px var(--faint)}
+.btn.pri{background:var(--ink);box-shadow:0 8px 20px rgba(3,10,24,.36);color:var(--on-ink)}
 .btn:disabled{opacity:.45;cursor:default}
-.linkish{align-self:flex-start;font-size:14px;color:var(--mist);text-decoration:underline;text-underline-offset:3px;min-height:32px}
+.linkish{align-self:flex-start;font-size:14px;color:var(--sub);text-decoration:underline;text-underline-offset:3px;min-height:32px}
 .pick{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;text-align:left;padding-block:8px;border-bottom:1px solid var(--hair)}
-.pick-art{width:44px;height:44px;color:var(--paper)}
+.pick-art{width:44px;height:44px;color:var(--ink)}
 .pick b{display:block;font-weight:400;line-height:1.3}
-.pick small{font-size:13px;color:var(--mist)}
+.pick small{font-size:13px;color:var(--sub)}
 .seedn{font:500 15px var(--mono)}
 
+/* 유리판 */
+.gl-host{position:relative;flex:none;aspect-ratio:1;width:min(100%,44dvh);margin-inline:auto;color:var(--ink)}
+.gl-tile{position:absolute;inset:6%;border-radius:25%;background:var(--tile);box-shadow:var(--tile-edge)}
+.gl-tile::after{padding:3px}
+.gl-tile svg{position:absolute;inset:9%;width:82%;height:82%}
+.gl-tile .qm{font-size:96px}
+.gl-host.pending .gl-tile{opacity:0}
+.gl-canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity .2s;touch-action:pan-y}
+.gl-canvas.on{opacity:1}
+
 /* 도감 상세 */
-.ent-photo{position:relative;flex:none;background:var(--paper);aspect-ratio:1;max-height:56dvh;width:100%;margin-inline:auto;overflow:hidden}
-.ent-photo img{position:absolute;inset:5px;width:calc(100% - 10px);height:calc(100% - 10px);object-fit:cover;display:block}
-.ent-ghost{aspect-ratio:1;max-height:38dvh;margin-inline:auto;color:var(--paper);background:var(--ground)}
-.ent-ghost svg{width:100%;height:100%}
-.thumbs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
-.thumb{flex:0 0 56px;width:56px;height:56px;background:var(--paper);padding:2px}
-.thumb[aria-pressed="true"]{outline:2px solid var(--paper);outline-offset:2px}
-.thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.eno{font:400 13px var(--mono);color:var(--mist)}
+.ent-photo{position:relative;flex:none;background:var(--mat);aspect-ratio:1;max-height:50dvh;width:100%;margin-inline:auto;border-radius:32px;box-shadow:var(--lift)}
+.ent-photo img{position:absolute;inset:7px;width:calc(100% - 14px);height:calc(100% - 14px);border-radius:26px;object-fit:cover;display:block}
+.thumbs{display:flex;gap:8px;overflow-x:auto;margin:-3px;padding:3px;scrollbar-width:none}
+.thumb.art{background:var(--ground)}
+.thumb{position:relative;flex:0 0 56px;width:56px;height:56px;border-radius:15px;background:var(--mat);padding:2px;box-shadow:inset 0 0 0 1px var(--hair);color:var(--ink)}
+.thumb[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:1px}
+.thumb img,.thumb svg{width:100%;height:100%;border-radius:13px;object-fit:cover;display:block}
+.eno{font:400 13px var(--mono);color:var(--sub)}
 .ename{font:400 32px/1.15 var(--display)}
-.esci{font:italic 500 18px/1.3 var(--latin);color:var(--mist)}
+.esci{font:italic 500 18px/1.3 var(--latin);color:var(--sub)}
 .stamps{display:flex;gap:6px;flex-wrap:wrap}
-.stamp{padding:2px 9px;font-size:13px;border:1px solid var(--faint)}
-.stamp.on{background:var(--paper);border-color:var(--paper);color:var(--ground-deep)}
+.stamp{padding:3px 11px;border-radius:99px;font-size:13px;box-shadow:inset 0 0 0 1px var(--faint)}
+.stamp.on{background:var(--ink);box-shadow:none;color:var(--on-ink)}
 .say{border-top:1px solid var(--hair);padding-top:10px}
-.say h4{margin:0 0 2px;font-weight:400;font-size:13px;color:var(--mist)}
+.say h4{margin:0 0 2px;font-weight:400;font-size:13px;color:var(--sub)}
 .say p{max-width:34em}
 .kkot{font:400 21px/1.35 var(--display)}
 .dex{font-size:16px;line-height:1.65;padding-block:10px;border-block:1px solid var(--hair);max-width:34em}
 .cal{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2px;margin-top:4px}
-.cal span{font:400 11px/22px var(--mono);height:22px;text-align:center;color:var(--mist);background:var(--hair)}
-.cal span.on{background:var(--paper);color:var(--ground-deep)}
-.cal span.now{box-shadow:inset 0 -3px 0 var(--mist)}
-.cal span.on.now{box-shadow:inset 0 -3px 0 var(--ground)}
+.cal span{font:400 11px/22px var(--mono);height:22px;border-radius:5px;text-align:center;color:var(--sub);background:var(--hair)}
+.cal span.on{background:var(--ink);color:var(--on-ink)}
+.cal span.now{box-shadow:inset 0 -3px 0 var(--sub)}
+.cal span.on.now{box-shadow:inset 0 -3px 0 var(--r1)}
 .logs li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;padding-block:6px;font-size:14px;border-bottom:1px solid var(--hair)}
-.logs .num{font-size:12px;line-height:22px;color:var(--mist)}
+.logs .num{font-size:12px;line-height:22px;color:var(--sub)}
 
 /* 촬영 */
-.cap{position:fixed;inset:0;z-index:20;background:var(--ground-deep);overflow-y:auto;overscroll-behavior:contain;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:calc(14px + env(safe-area-inset-top,0px)) calc(24px + max(env(safe-area-inset-bottom,0px),var(--kb,0px)));scroll-padding-top:calc(12px + env(safe-area-inset-top,0px));scroll-padding-bottom:calc(92px + var(--kb,0px))}
-.cap::before{content:"";position:fixed;inset:0 0 auto;z-index:1;height:env(safe-area-inset-top,0px);background:var(--ground-deep)}
+.cap{position:fixed;inset:0;z-index:20;background:var(--surface);overflow-y:auto;overscroll-behavior:contain;padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:calc(14px + env(safe-area-inset-top,0px)) calc(24px + max(env(safe-area-inset-bottom,0px),var(--kb,0px)));scroll-padding-top:calc(12px + env(safe-area-inset-top,0px));scroll-padding-bottom:calc(92px + var(--kb,0px))}
+.cap::before{content:"";position:fixed;inset:0 0 auto;z-index:1;height:env(safe-area-inset-top,0px);background:var(--surface)}
 .cap-in{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
-.print{position:relative;aspect-ratio:1;max-height:50dvh;width:100%;margin-inline:auto;background:var(--paper);padding:6px;overflow:hidden}
-.print canvas{position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);object-fit:cover;display:block}
+.print{position:relative;aspect-ratio:1;max-height:50dvh;width:100%;margin-inline:auto;background:var(--mat);border-radius:32px;box-shadow:var(--lift)}
+.print canvas{position:absolute;inset:7px;width:calc(100% - 14px);height:calc(100% - 14px);border-radius:26px;object-fit:cover;display:block}
 #devColor{clip-path:circle(0% at 50% 50%)}
 .print.lit #devColor{clip-path:circle(75% at 50% 50%);transition:clip-path 1.5s cubic-bezier(.2,.7,.2,1)}
-.scan{position:absolute;left:6px;right:6px;top:6px;height:2px;background:var(--paper);box-shadow:0 0 14px 2px rgba(240,244,248,.7);animation:scan 2.4s ease-in-out infinite alternate}
+.scan{position:absolute;left:14px;right:14px;top:14px;height:2px;border-radius:1px;background:var(--mat);box-shadow:0 0 14px 3px rgba(56,214,255,.8);animation:scan 2.4s ease-in-out infinite alternate}
 .print.lit .scan,.print.off .scan{display:none}
-@keyframes scan{to{top:calc(100% - 8px)}}
-.r-tag{font-size:14px;color:var(--mist)}
+@keyframes scan{to{top:calc(100% - 16px)}}
+.r-tag{font-size:14px;color:var(--sub)}
 .r-name{font:400 34px/1.15 var(--display)}
-.r-sci{font:italic 500 18px/1.3 var(--latin);color:var(--mist)}
+.r-sci{font:italic 500 18px/1.3 var(--latin);color:var(--sub)}
 .r-grade{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:baseline;border-block:1px solid var(--hair);padding-block:9px;font-size:15px}
 .r-grade .num{letter-spacing:.06em}
-.fld{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--mist)}
-.fld input,.fld select{height:46px;padding-inline:11px;background:var(--ground);border:1px solid var(--faint);border-radius:0;font-size:16px;color:var(--paper)}
-.fld input::placeholder{color:var(--mist);opacity:.75}
+.fld{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--sub)}
+.fld input,.fld select{height:48px;padding-inline:13px;background:rgba(7,22,48,.55);border:1px solid var(--faint);border-radius:14px;font-size:16px;color:var(--ink)}
+.fld input::placeholder{color:var(--sub);opacity:.75}
 .wait{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
 .wait b{font:400 18px/1.3 var(--body)}
 
-.toast{position:fixed;left:50%;bottom:calc(92px + max(env(safe-area-inset-bottom,0px),var(--kb,0px)));z-index:30;width:max-content;max-width:calc(100vw - 32px);transform:translateX(-50%);background:var(--paper);color:var(--ground-deep);padding:9px 14px;font-size:14px;line-height:1.4;text-align:center;box-shadow:0 6px 22px rgba(4,12,28,.45)}
+.toast{position:fixed;left:50%;bottom:calc(max(var(--dock-h),calc(var(--kb,0px) + 12px)) + 26px);z-index:30;width:max-content;max-width:calc(100vw - 32px);transform:translateX(-50%);background:var(--ink);color:var(--on-ink);border-radius:18px;padding:9px 16px;font-size:14px;line-height:1.4;text-align:center;box-shadow:0 10px 26px rgba(3,10,24,.45)}
+
+/* 움직임 */
+.pot{position:relative}
+.drop{position:absolute;left:50%;top:6%;width:6px;height:9px;margin-left:-3px;border-radius:50% 50% 50% 50%/65% 65% 35% 35%;background:var(--ink);opacity:0;animation:drop .62s cubic-bezier(.5,0,.9,.6) forwards}
+@keyframes drop{0%{opacity:0;transform:translateY(0)}15%{opacity:.9}100%{opacity:.2;transform:translateY(92px)}}
+.ring{position:absolute;left:50%;bottom:4%;width:56px;height:12px;margin-left:-28px;border:1px solid var(--ink);border-radius:50%;opacity:0;animation:ring .7s ease-out .45s forwards}
+@keyframes ring{0%{opacity:.7;transform:scale(.2)}100%{opacity:0;transform:scale(1.5)}}
+.fly{position:fixed;z-index:25;width:10px;height:6px;border-radius:6px 0;pointer-events:none}
+.stat b.bump{animation:bump .36s ease-out}
+@keyframes bump{40%{transform:scale(1.35)}}
+.mbi{transform-box:fill-box;transform-origin:center}
+.pop .mbi{animation:pop .42s cubic-bezier(.2,1.5,.4,1) backwards;animation-delay:calc(var(--i)*55ms + 120ms)}
+@keyframes pop{from{transform:scale(0) rotate(-40deg)}}
 
 @media (prefers-reduced-motion:reduce){
-  .sway,.scan,.sheet,.scrim,.view-in{animation:none}
+  .sway,.scan,.sheet,.scrim,.view-in,.shutter::after,.pop .mbi,.stat b.bump{animation:none}
+  .drop,.ring{display:none}
   .print.lit #devColor,.xp i{transition:none}
 }
 </style>
@@ -366,6 +412,7 @@ img.broken{opacity:0}
 <script src="config.js"></script>
 <script src="art.js"></script>
 <script src="dex.js"></script>
+<script src="glass.js"></script>
 <script>
 'use strict';
 /* ---------- 규칙 ---------- */
@@ -679,6 +726,10 @@ function paints(sp){
   const line='stroke="currentColor" stroke-width=".8"';
   return {a:`fill="currentColor" fill-opacity=".16" ${line}`,b:`fill="currentColor" fill-opacity=".08" ${line}`,core:`fill="currentColor" fill-opacity=".8"`,c:`fill="currentColor" fill-opacity=".8"`,ink:'currentColor',tip:null};
 }
+function rimVars(color,core){
+  if(!hexOk(color)) return '';
+  return `--r1:${shade(color,.4)};--r2:${color};--r3:${hexOk(core)?core:shade(color,-.3)}`;
+}
 function petal(x,y,len,wid,rot,attr){
   return `<path transform="translate(${n1(x)} ${n1(y)}) rotate(${n1(rot)})" d="M0 0C${n1(wid)} ${n1(-len*.3)} ${n1(wid)} ${n1(-len*.85)} 0 ${n1(-len)}C${n1(-wid)} ${n1(-len*.85)} ${n1(-wid)} ${n1(-len*.3)} 0 0Z" ${attr}/>`;
 }
@@ -807,18 +858,43 @@ function gainXP(n){
 
 /* ---------- 화면 ---------- */
 let tab='garden', bookFilter='all', gardenSig='';
+const shown={};
+function showStat(id,v){
+  const el=$(id);
+  if(shown[id]!==undefined&&v>shown[id]){ el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+  shown[id]=v; el.textContent=v;
+}
+const stillMode=()=>matchMedia('(prefers-reduced-motion:reduce)').matches;
+function burst(el,colors){
+  if(!el||stillMode()) return;
+  const r=el.getBoundingClientRect(), x=r.left+r.width/2, y=r.top+r.height*.4;
+  for(let i=0;i<16;i++){
+    const f=document.createElement('i'), a=Math.random()*Math.PI*2, d=60+Math.random()*90;
+    f.className='fly'; f.style.background=colors[i%colors.length]; f.style.left=x+'px'; f.style.top=y+'px';
+    document.body.append(f);
+    f.animate([
+      {transform:'translate(-50%,-50%) scale(1) rotate(0deg)',opacity:1},
+      {transform:`translate(calc(-50% + ${Math.round(Math.cos(a)*d)}px),calc(-50% + ${Math.round(Math.sin(a)*d+46)}px)) scale(.5) rotate(${Math.round(Math.random()*420)}deg)`,opacity:0},
+    ],{duration:720+Math.random()*420,easing:'cubic-bezier(.15,.7,.3,1)'}).onfinish=()=>f.remove();
+  }
+}
+function waterFx(){
+  const pot=$('.pot');
+  if(pot) pot.insertAdjacentHTML('beforeend','<i class="drop"></i><i class="drop" style="animation-delay:.14s;margin-left:-13px"></i><i class="drop" style="animation-delay:.26s;margin-left:7px"></i><i class="ring"></i>');
+}
 function renderTop(){
   const lv=levelOf(s.xp), a=xpFor(lv), b=xpFor(lv+1);
-  $('#stDew').textContent=s.water;
-  $('#stSeed').textContent=seedTotal();
-  $('#stLv').textContent=lv;
+  showStat('#stDew',s.water);
+  showStat('#stSeed',seedTotal());
+  showStat('#stLv',lv);
   $('#xpBar').style.width=clamp((s.xp-a)/(b-a)*100,0,100)+'%';
 }
 function plotHTML(p,i,now){
   if(!p) return `<button class="plot empty" data-act="plot" data-i="${i}" aria-label="빈 칸, 씨앗 심기"><span class="plot-art"><svg class="pl" viewBox="0 12 120 134" aria-hidden="true"><path d="M6 142H114" stroke="currentColor" stroke-opacity=".38" stroke-width=".8"/></svg><i class="reg"></i></span><span class="plot-name">빈 칸</span><span class="plot-meta">&nbsp;</span></button>`;
   const sp={...speciesOf(p.key),color:p.color,core:p.core}, pct=progress(p,now), st=stageOf(pct), dry=st<4&&p.wetUntil<=now;
   const meta=st===4?'수확할 수 있어요':dry?'물이 필요해요':STAGES[st];
-  return `<button class="plot" data-act="plot" data-i="${i}" aria-label="${esc(sp.name)}, ${meta}"><span class="plot-art">${plantSVG(sp,st,p.key+p.at)}</span><span class="plot-name">${esc(sp.name)}</span><span class="plot-meta${st===4||dry?' want':''}">${meta}</span></button>`;
+  const glow=st===4&&hexOk(p.color);
+  return `<button class="plot${glow?' bloom':''}"${glow?` style="${rimVars(p.color,p.core)}"`:''} data-act="plot" data-i="${i}" aria-label="${esc(sp.name)}, ${meta}"><span class="plot-art">${plantSVG(sp,st,p.key+p.at)}</span><span class="plot-name">${esc(sp.name)}</span><span class="plot-meta${st===4||dry?' want':''}">${meta}</span></button>`;
 }
 function renderGarden(){
   const now=Date.now();
@@ -836,7 +912,7 @@ function renderMonth(){
   const list=CATALOG.filter(c=>c.months[m]&&(!home||!c.regions.length||c.regions.includes(s.region))).sort((a,b)=>(!!s.entries[a.key]-!!s.entries[b.key])||(a.months.filter(Boolean).length===12)-(b.months.filter(Boolean).length===12));
   $('#monthStrip').innerHTML=list.map(c=>{
     const e=s.entries[c.key];
-    return `<button class="mini" data-act="entry" data-key="${c.key}"><span class="mini-art">${e?colorIcon(e):flowerIcon(c)}</span><b>${esc(c.name)}</b><small>${esc(c.hint.split(',')[0])}</small></button>`;
+    return `<button class="mini${e?' got':''}" data-act="entry" data-key="${c.key}"><span class="mini-art"${e?` style="${rimVars(e.color,e.core)}"`:''}>${e?colorIcon(e):flowerIcon(c)}</span><b>${esc(c.name)}</b><small>${esc(c.hint.split(',')[0])}</small></button>`;
   }).join('');
 }
 function renderSync(){
@@ -896,14 +972,14 @@ function buildMap(){
 }
 function renderMap(){
   const data=regionData(), ids=Object.keys(REGIONS);
-  let blooms='', labels='';
+  let blooms='', labels='', order=0;
   for(const id of ids){
     const d=data[id], pts=MAP.regions[id].pts, L=MAP.regions[id].label;
     $('#land-'+id).classList.toggle('seen',d.species.size>0);
     let i=0;
     for(const color of d.species.values()){
       const [x,y]=pts[i%pts.length]; i++;
-      if(hexOk(color)) blooms+=`<g class="mb" transform="translate(${x} ${y})"><g fill="${color}">${PETALS5}</g><circle r="1.700" fill="#F0F4F8"/></g>`;
+      if(hexOk(color)) blooms+=`<g class="mb" transform="translate(${x} ${y})"><g class="mbi" style="--i:${order++}"><g fill="${color}">${PETALS5}</g><circle r="1.700" fill="#F0F4F8"/></g></g>`;
     }
     const n=d.species.size;
     labels+=`<text class="mlabel${id==='ulleung'?' sm':''}" x="${L[0]}" y="${L[1]+4}">${esc(REGIONS[id].name)}${n?` <tspan>${n}</tspan>`:''}</text>`;
@@ -951,7 +1027,7 @@ function renderBook(){
   $('#bookGrid').innerHTML=list.length?list.map(x=>{
     const ph=x.e&&x.e.photos[x.e.photos.length-1], hidden=x.c&&!known(x.c);
     const art=x.e?colorIcon(x.e):hidden?QMARK:flowerIcon(x.sp);
-    return `<button class="slot${x.e?' got':''}${hidden?' q':''}" data-act="entry" data-key="${esc(x.key)}" aria-label="${hidden?`${x.no}번 아직 모르는 꽃`:esc(x.name)}"><span class="slot-art">${art}${ph?`<img class="snap" src="${esc(photoSrc(ph.pid))}" alt="" loading="lazy">`:''}${x.e&&x.e.bloomed?'<i class="seal" title="직접 키움">개화</i>':''}</span><span class="slot-no">${x.no}</span><span class="slot-name">${hidden?'???':esc(x.name)}</span></button>`;
+    return `<button class="slot${x.e?' got':''}${hidden?' q':''}" data-act="entry" data-key="${esc(x.key)}" aria-label="${hidden?`${x.no}번 아직 모르는 꽃`:esc(x.name)}"><span class="slot-art"${x.e?` style="${rimVars(x.e.color,x.e.core)}"`:''}>${art}${ph?`<img class="snap" src="${esc(photoSrc(ph.pid))}" alt="" loading="lazy">`:''}${x.e&&x.e.bloomed?'<i class="seal" title="직접 키움">개화</i>':''}</span><span class="slot-no">${x.no}</span><span class="slot-name">${hidden?'???':esc(x.name)}</span></button>`;
   }).join(''):`<p class="empty-note">${bookFilter==='extra'?'도감 목록에 없는 꽃을 찍으면 여기에 모여요.':'아직 모은 꽃이 없어요. 촬영 버튼을 눌러 첫 꽃을 찍어 보세요.'}</p>`;
 }
 function renderAll(){ noteSeen(); renderTop(); renderGarden(); renderMonth(); renderBook(); renderMap(); renderSync(); }
@@ -964,6 +1040,7 @@ function setTab(t){
   for(const id of ['garden','map','book','today']) $('#'+id).hidden=t!==id;
   next.scrollTop=tabScroll[t]||0;
   next.classList.remove('view-in'); void next.offsetWidth; next.classList.add('view-in');
+  if(t==='map'){ const m=$('#mapBlooms'); m.classList.remove('pop'); void m.getBoundingClientRect(); m.classList.add('pop'); }
   document.querySelectorAll('.tab').forEach(b=>{ if(b.dataset.tab===t) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
 }
 let toastTimer=0, closeTimer=0;
@@ -980,6 +1057,7 @@ function toast(msg){ const t=$('#toast'); t.textContent=msg; t.hidden=false; cle
 /* ---------- 시트 ---------- */
 function openSheet(title,html){
   const el=$('#sheet');
+  if(window.GlassPlate) GlassPlate.unmount();
   clearTimeout(closeTimer); el.classList.remove('out'); $('#scrim').classList.remove('out');
   el.innerHTML=`<div class="grip" aria-hidden="true"></div><div class="sheet-bar"><h3>${esc(title)}</h3><button class="x" data-act="closeSheet">닫기</button></div><div class="stack">${html}</div>`;
   el.hidden=false; $('#scrim').hidden=false; el.scrollTop=0;
@@ -988,6 +1066,7 @@ function openSheet(title,html){
 function closeSheet(){
   const el=$('#sheet'), sc=$('#scrim');
   if(el.hidden) return;
+  if(window.GlassPlate) GlassPlate.unmount();
   el.classList.add('out'); sc.classList.add('out');
   clearTimeout(closeTimer);
   closeTimer=setTimeout(()=>{ el.hidden=true; sc.hidden=true; el.classList.remove('out'); sc.classList.remove('out'); },170);
@@ -1018,7 +1097,7 @@ function plantSheet(i){
   const base=speciesOf(p.key), sp={...base,color:p.color,core:p.core}, pct=progress(p,now), st=stageOf(pct), wet=p.wetUntil>now;
   const left=(1-pct)*p.total, line=st===4?'활짝 피었어요. 수확하면 경험치를 받고 도감 기록이 채워져요.':!wet?'흙이 말라 성장이 멈췄어요. 물을 주면 다시 자랍니다.':`만개까지 ${fmtLeft(left)}. 앞으로 ${fmtLeft(p.wetUntil-now)} 동안 흙이 촉촉해요.`;
   const giftNote=base.gift?'<p class="meta">사진을 찍지 않은 꽃이라 색이 없어요.</p>':'';
-  openSheet(sp.name,`<div class="plant-hd"><div>${plantSVG(sp,st,p.key+p.at)}</div><div class="stack"><p class="meta">${STAGES[st]} · <span class="num">${Math.floor(pct*100)}%</span></p><div class="bar"><i style="width:${pct*100}%"></i></div></div></div>
+  openSheet(sp.name,`<div class="plant-hd"><div class="pot">${plantSVG(sp,st,p.key+p.at)}</div><div class="stack"><p class="meta">${STAGES[st]} · <span class="num">${Math.floor(pct*100)}%</span></p><div class="bar"><i style="width:${pct*100}%"></i></div></div></div>
     <p>${line}</p>${giftNote}
     ${st===4?`<button class="btn pri" data-act="harvest" data-i="${i}">수확하기</button>`:`<button class="btn pri" data-act="water" data-i="${i}" ${s.water<1?'disabled':''}>물 주기 · 이슬 1방울</button><p class="meta">이슬 ${s.water}방울. 물을 주면 바로 8% 자라고 흙이 6시간 촉촉해져요.${s.water<DEW_MAX?` 다음 이슬까지 ${fmtLeft(Math.max(MIN,DEW_MS-(now-s.waterAt)))}.`:''}</p>`}`);
 }
@@ -1034,9 +1113,21 @@ function flowerMini(sp){
   const body=window.FlowerArt&&FlowerArt.has(sp.name)?FlowerArt.mini(sp,paints(sp),sp.name):bloomHead(sp,50,50,sp.form==='spike'?30:40,sp.key);
   return `<svg viewBox="0 0 100 100" aria-hidden="true">${body}</svg>`;
 }
-function coloredPlate(e){
-  if(!window.FlowerArt||!FlowerArt.has(e.name)) return '';
-  return `<div class="ent-plate"><svg viewBox="-6 14 132 132" aria-hidden="true"><path d="M6 142H114" stroke="currentColor" stroke-opacity=".38" stroke-width=".8"/>${FlowerArt.specimen(e,paints(e),e.name)}</svg><p class="meta">이 사진의 색으로 그린 내 도감 그림이에요.</p></div>`;
+function plateSVG(sp,P){
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="-6 14 132 132" style="color:#F0F4F8"><path d="M6 142H114" stroke="currentColor" stroke-opacity=".38" stroke-width=".8"/>${FlowerArt.specimen(sp,P,sp.name)}</svg>`;
+}
+function plateHTML(sp,colored,pending){
+  return `<div class="gl-host${pending?' pending':''}" id="glHost"><div class="gl-tile"${colored?` style="${rimVars(sp.color,sp.core)}"`:''}>${colored?colorIcon(sp):flowerIcon(sp)}</div></div>`;
+}
+function mountPlate(sp,colored,reveal,onBloom){
+  const host=$('#glHost'), done=()=>{ if(host) host.classList.remove('pending'); };
+  if(!host||!window.GlassPlate){ done(); if(onBloom) onBloom(); return; }
+  GlassPlate.mount(host,{
+    line:plateSVG(sp,paints({})),
+    color:colored?plateSVG(sp,paints(sp)):null,
+    tint:colored?{color:sp.color,core:hexOk(sp.core)?sp.core:shade(sp.color,.45)}:null,
+    reveal,onBloom,
+  }).then(ok=>{ done(); if(!ok&&onBloom) onBloom(); },done);
 }
 function calHTML(c){
   const m=new Date().getMonth();
@@ -1045,29 +1136,30 @@ function calHTML(c){
 function entrySheet(key,photoIdx){
   const e=s.entries[key], c=byKey[key];
   if(!e&&!known(c)){
-    openSheet(`No.${pad3(c.no)}`,`<div class="ent-ghost q">${QMARK}</div>
+    openSheet(`No.${pad3(c.no)}`,`<div class="gl-host"><div class="gl-tile">${QMARK}</div></div>
       <div><h3 class="ename">???</h3><p class="meta">아직 모습을 알 수 없는 꽃이에요. 피는 달이 되면 도감에 나타나요.</p></div>
       <div class="say"><h4>피는 달</h4>${calHTML(c)}<p class="meta" style="margin-top:6px">지역과 해마다 조금씩 달라요.</p></div>
       <div class="say"><h4>찾아볼 곳</h4><p>${esc(c.hint)}</p>${regionLine(c)}</div>`);
     return;
   }
   if(!e){
-    openSheet(`No.${pad3(c.no)}`,`<div class="ent-ghost">${flowerIcon(c)}</div>
+    openSheet(`No.${pad3(c.no)}`,`${window.FlowerArt&&FlowerArt.has(c.name)?plateHTML(c,false):`<div class="gl-host"><div class="gl-tile">${flowerIcon(c)}</div></div>`}
       <div><h3 class="ename">${esc(c.name)}</h3><p class="esci">${esc(c.sci)}</p></div>
       <p class="meta">귀하기 <span class="num">${stars(c.rarity)}</span> · 직접 찍으면 도감 설명이 열려요.</p>
       <div class="say"><h4>피는 달</h4>${calHTML(c)}<p class="meta" style="margin-top:6px">지역과 해마다 조금씩 달라요.</p></div>
       <div class="say"><h4>찾아볼 곳</h4><p>${esc(c.hint)}</p>${regionLine(c)}</div>
       <button class="btn pri" data-act="shoot">이 꽃 찍으러 가기</button>`);
+    if(window.FlowerArt&&FlowerArt.has(c.name)) mountPlate(c,false);
     return;
   }
-  const photos=e.photos, idx=photoIdx==null?photos.length-1:photoIdx, ph=photos[idx];
+  const photos=e.photos, drawn=window.FlowerArt&&FlowerArt.has(e.name)&&hexOk(e.color);
+  const showPhoto=!drawn||photoIdx!=null, idx=photoIdx==null?photos.length-1:photoIdx, ph=photos[idx];
   const no=c?`No.${pad3(c.no)}`:'도감 밖의 꽃';
   const bloomed=e.bloomed>0;
-  openSheet(no,`<div class="ent-photo"><img src="${esc(photoSrc(ph.pid))}" alt="${esc(e.name)} 사진"></div>
-    ${photos.length>1?`<div class="thumbs">${photos.map((p,i)=>`<button class="thumb" data-act="entryPhoto" data-key="${esc(key)}" data-idx="${i}" aria-pressed="${i===idx}" aria-label="사진 ${i+1}"><img src="${esc(photoSrc(p.pid))}" alt="" loading="lazy"></button>`).join('')}</div>`:''}
+  openSheet(no,`${showPhoto?`<div class="ent-photo"><img src="${esc(photoSrc(ph.pid))}" alt="${esc(e.name)} 사진"></div>`:plateHTML(e,true)}
+    ${drawn||photos.length>1?`<div class="thumbs">${drawn?`<button class="thumb art" data-act="entryPhoto" data-key="${esc(key)}" data-idx="" aria-pressed="${!showPhoto}" aria-label="도감 그림">${flowerMini(e)}</button>`:''}${photos.map((p,i)=>`<button class="thumb" data-act="entryPhoto" data-key="${esc(key)}" data-idx="${i}" aria-pressed="${showPhoto&&i===idx}" aria-label="사진 ${i+1}"><img src="${esc(photoSrc(p.pid))}" alt="" loading="lazy"></button>`).join('')}</div>`:''}
     <div><h3 class="ename">${esc(e.name)}</h3>${e.sci?`<p class="esci">${esc(e.sci)}</p>`:''}${e.family?`<p class="meta">${esc(e.family)}</p>`:''}</div>
     ${c&&c.dex?`<p class="dex">${esc(c.dex)}</p>`:''}
-    ${coloredPlate(e)}
     <div class="stamps"><span class="stamp on">채집 ${photos.length}회</span><span class="stamp${bloomed?' on':''}">${bloomed?`개화 ${e.bloomed}회`:'아직 키우지 않음'}</span><span class="stamp"><span class="num">${stars(e.rarity)}</span></span></div>
     <div class="say"><h4>꽃말</h4>${bloomed?`<p class="kkot">${esc(e.kkotmal||'감정 기록이 없어요')}</p>`:'<p class="meta">이 꽃을 정원에서 끝까지 키우면 열려요.</p>'}</div>
     ${e.fact?`<div class="say"><h4>감정 노트</h4><p>${esc(e.fact)}</p></div>`:''}
@@ -1076,6 +1168,7 @@ function entrySheet(key,photoIdx){
       const where=[p.region&&REGIONS[p.region]?REGIONS[p.region].name:'',p.place].filter(Boolean).join(' · ')||'장소 기록 없음';
       return `<li><span class="num">${fmtDate(p.t)}</span><span>${esc(where)}${p.verified?'':' · 직접 등록'}</span><span class="num">${stars(p.grade,3)}</span></li>${p.region?'':`<li class="log-fix"><label class="fld">이 사진의 지역 넣기<select data-chg="photoRegion" data-key="${esc(key)}" data-idx="${i}">${regionOptions('')}</select></label></li>`}`;
     }).join('')}</ul></div>`);
+  if(!showPhoto) mountPlate(e,true);
 }
 function regionLine(c){ return c.regions.length?`<p class="meta" style="margin-top:6px">지역 꽃: ${c.regions.map(r=>REGIONS[r].name).join(', ')}</p>`:''; }
 function regionOptions(sel){ return `<option value="">지역을 고르세요</option>`+Object.keys(REGIONS).map(id=>{ const R=REGIONS[id]; return `<option value="${id}"${id===sel?' selected':''}>${esc(R.name)}${R.sub===R.name?'':` (${esc(R.sub)})`}</option>`; }).join(''); }
@@ -1089,7 +1182,7 @@ function doWater(i){
   s.water--; if(full) s.waterAt=now;
   const p=s.plots[i]; settle(p,now);
   p.grown=Math.min(p.total,p.grown+p.total*WATER_BOOST); p.wetUntil=now+WET_MS;
-  bump('water'); commit(); plantSheet(i);
+  bump('water'); commit(); plantSheet(i); waterFx();
 }
 function doPlant(i,key){
   if(!s.seeds[key]||s.plots[i]) return;
@@ -1112,9 +1205,10 @@ function doHarvest(i){
   s.entries[p.key].bloomed=(s.entries[p.key].bloomed||0)+1;
   s.seeds[p.key]=(s.seeds[p.key]||0)+1;
   bump('harvest'); commit();
-  openSheet('수확했어요',`<div class="plant-hd"><div>${plantSVG({...sp,color:p.color,core:p.core},4,p.key+p.at)}</div><div><p class="meta">${esc(sp.name)} · 씨앗 1개와 경험치 ${30*sp.rarity}</p></div></div>
+  openSheet('수확했어요',`<div class="plant-hd"><div class="pot">${plantSVG({...sp,color:p.color,core:p.core},4,p.key+p.at)}</div><div><p class="meta">${esc(sp.name)} · 씨앗 1개와 경험치 ${30*sp.rarity}</p></div></div>
     ${first?`<div class="say"><h4>새로 열린 꽃말</h4><p class="kkot">${esc(sp.kkotmal||'감정 기록이 없어요')}</p></div>`:''}
     <button class="btn pri" data-act="entry" data-key="${esc(p.key)}">도감에서 보기</button>`);
+  setTimeout(()=>burst($('.pot'),[p.color,p.core].filter(hexOk).concat('#F0F4F8')),240);
 }
 
 /* ---------- 촬영과 감정 ---------- */
@@ -1201,8 +1295,8 @@ function drawPrints(src){
   }
   bx.putImageData(img,0,0);
 }
-function capOpen(){ $('#cap').hidden=false; $('#cap').scrollTop=0; $('#print').className='print'; $('#capBody').innerHTML=''; }
-function capClose(){ if(job&&job.ctl) job.ctl.abort(); job=null; $('#cap').hidden=true; }
+function capOpen(){ $('#cap').hidden=false; $('#cap').scrollTop=0; $('#print').hidden=false; $('#print').className='print'; $('#capBody').innerHTML=''; }
+function capClose(){ if(job&&job.ctl) job.ctl.abort(); job=null; if(window.GlassPlate) GlassPlate.unmount(); $('#cap').hidden=true; }
 function waitUI(){
   const t0=Date.now();
   $('#capBody').innerHTML=`<div class="wait"><b>꽃을 감정하고 있어요</b><span class="num" id="waitSec">0초</span></div><p class="meta">사진 속 꽃의 종류와 사진 솜씨를 살피는 중이에요. 보통 몇 초에서 30초쯤 걸려요.</p><button class="btn" data-act="capCancel">취소</button>`;
@@ -1341,10 +1435,14 @@ async function register(btn){
   const fresh=commit();
   me.done=true;
   const free=s.plots.findIndex(p=>!p);
+  const drawn=window.FlowerArt&&FlowerArt.has(e.name)&&hexOk(e.color);
   $('#print').classList.add('lit');
-  $('#capBody').innerHTML=`<p class="r-tag">등록을 마쳤어요</p><h2 class="r-name">${esc(r.name)}</h2>${r.no&&isNew&&CATALOG[r.no-1].dex?`<p class="dex">${esc(CATALOG[r.no-1].dex)}</p>`:''}<p>씨앗 ${seeds}개와 이슬 2방울을 받았어요.${firstHere?` 새 지역 ${esc(REGIONS[region].name)}에 첫 꽃이 피어서 이슬 3방울을 더 받았어요.`:''}</p>${fresh.length?`<p>${esc(badgeLine(fresh))}</p>`:''}
+  $('#print').hidden=drawn;
+  $('#cap').scrollTop=0;
+  $('#capBody').innerHTML=`${drawn?plateHTML(e,true,true):''}<p class="r-tag">등록을 마쳤어요</p><h2 class="r-name">${esc(r.name)}</h2>${r.no&&isNew&&CATALOG[r.no-1].dex?`<p class="dex">${esc(CATALOG[r.no-1].dex)}</p>`:''}<p>씨앗 ${seeds}개와 이슬 2방울을 받았어요.${firstHere?` 새 지역 ${esc(REGIONS[region].name)}에 첫 꽃이 피어서 이슬 3방울을 더 받았어요.`:''}</p>${fresh.length?`<p>${esc(badgeLine(fresh))}</p>`:''}
     ${free>=0?`<button class="btn pri" data-act="plantNow" data-i="${free}" data-key="${esc(r.key)}">정원에 바로 심기</button>`:'<p class="meta">화단이 꽉 찼어요. 꽃을 수확하면 자리가 나요.</p>'}
     <button class="btn" data-act="seeEntry" data-key="${esc(r.key)}">도감에서 보기</button>`;
+  if(drawn) mountPlate(e,true,'play',()=>{ haptic('success'); burst($('#glHost'),[e.color,e.core].filter(hexOk).concat('#F0F4F8')); });
 }
 async function wipeAll(btn){
   btn.disabled=true; btn.textContent='지우고 있어요';
@@ -1404,7 +1502,7 @@ document.addEventListener('click',e=>{
     case 'water': haptic('light'); doWater(i); break;
     case 'harvest': haptic('success'); doHarvest(i); break;
     case 'entry': entrySheet(key); break;
-    case 'entryPhoto': entrySheet(key,+b.dataset.idx); break;
+    case 'entryPhoto': entrySheet(key,b.dataset.idx===''?null:+b.dataset.idx); break;
     case 'filter': bookFilter=b.dataset.f; renderBook(); break;
     case 'goMonth': bookFilter='month'; renderBook(); setTab('book'); break;
     case 'closeSheet': closeSheet(); break;
