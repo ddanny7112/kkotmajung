@@ -76,7 +76,7 @@ ul{list-style:none}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 /* 유리 가장자리에서 갈라지는 빛 */
-.dock-in::after,.slot.got .slot-art::after,.mini.got .mini-art::after,.plot.bloom::after,.gl-tile::after,.ent-photo::after,.print::after{
+.slot.got .slot-art::after,.mini.got .mini-art::after,.plot.bloom::after,.gl-tile::after,.ent-photo::after,.print::after{
   content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;
   background:conic-gradient(transparent 0 4%,var(--r1) 8%,var(--r2) 12.5%,var(--r3) 17%,transparent 21% 54%,var(--r1) 58%,var(--r2) 62.5%,var(--r3) 67%,transparent 71%);
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
